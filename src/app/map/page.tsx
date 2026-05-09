@@ -1,232 +1,274 @@
 "use client"
 
-import { 
-  MapPin, 
-  Search, 
-  Navigation, 
-  Layers, 
-  Maximize2, 
-  Filter,
-  Info,
-  Clock,
-  Trash2,
-  AlertCircle,
-  MoreVertical,
-  Truck,
-  Target,
-  Zap,
-  Activity
-} from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
+import { 
+  MapPin, Search, Navigation, Filter, AlertCircle,
+  Clock, Truck, Recycle, Info, ChevronUp, RefreshCw,
+  Layers, Eye, ThumbsUp, AlertTriangle
+} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { useLanguage } from "@/components/shared/LanguageProvider"
 
 const locations = [
-  { id: 1, type: "bin", lat: "40%", lng: "30%", status: "Optimal", capacity: "12%", address: "Sector 14 Main Terminal", lastCleaned: "2 hours ago", nextPickup: "Tomorrow, 6 AM" },
-  { id: 2, type: "bin", lat: "55%", lng: "45%", status: "Nominal", capacity: "54%", address: "City Center Hub", lastCleaned: "5 hours ago", nextPickup: "Tomorrow, 7 AM" },
-  { id: 3, type: "bin", lat: "25%", lng: "60%", status: "Critical", capacity: "92%", address: "Green View Terminal", lastCleaned: "Yesterday", nextPickup: "Today, ASAP" },
-  { id: 4, type: "vehicle", lat: "60%", lng: "35%", status: "Active", address: "Dispatch Truck #402", route: "Sector 14 Distribution" },
+  { id: 1, type: "bin", lat: "38%", lng: "28%", fill: 18, status: "low", address: "Sector 14 Main Gate", lastCleaned: "2h ago", nextPickup: "Tomorrow, 6 AM", capacity: "120L" },
+  { id: 2, type: "bin", lat: "52%", lng: "48%", fill: 67, status: "medium", address: "City Center Park", lastCleaned: "5h ago", nextPickup: "Today, 4 PM", capacity: "120L" },
+  { id: 3, type: "bin", lat: "22%", lng: "62%", fill: 91, status: "high", address: "Green View Market", lastCleaned: "12h ago", nextPickup: "ASAP", capacity: "120L" },
+  { id: 4, type: "vehicle", lat: "58%", lng: "33%", address: "Collection Truck #402", route: "Sector 14 Route", eta: "~18 min away" },
+  { id: 5, type: "complaint", lat: "45%", lng: "70%", address: "Illegal Dumping Reported", status: "in-progress" },
 ]
 
+const statusColor = {
+  low: { bg: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", label: "Low Fill" },
+  medium: { bg: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400", label: "Medium Fill" },
+  high: { bg: "bg-red-500", text: "text-red-600 dark:text-red-400", badge: "bg-red-500/10 text-red-600 dark:text-red-400", label: "Needs Pickup" },
+}
+
 export default function MapPage() {
-  const { t } = useLanguage()
-  const [selectedEntity, setSelectedEntity] = useState(locations[2])
+  const [selectedEntity, setSelectedEntity] = useState<typeof locations[0]>(locations[2])
+  const [showHeatmap, setShowHeatmap] = useState(false)
+  const [showTransparency, setShowTransparency] = useState(true)
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false)
 
   return (
-    <div className="h-screen w-full relative overflow-hidden bg-background animate-in fade-in duration-1000">
-      {/* Map Background Simulation */}
+    <div className="h-[calc(100vh-0rem)] w-full relative overflow-hidden bg-background animate-in fade-in duration-700">
+      
+      {/* Map Simulation Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/77.2090,28.6139,12/1200x800?access_token=YOUR_TOKEN')] bg-cover opacity-60 mix-blend-multiply filter grayscale transition-all duration-700"></div>
-        <div className="absolute inset-0 bg-mesh opacity-20"></div>
-        
-        {/* Route Lines Simulation */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-60">
-          <path 
-            d="M 400 300 Q 550 450 600 250 T 800 450" 
-            fill="none" 
-            stroke="var(--primary)" 
-            strokeWidth="3" 
-            strokeDasharray="15 10" 
-            className="animate-[dash_30s_linear_infinite]"
-          />
+        {/* City grid simulation */}
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            linear-gradient(rgba(var(--primary-rgb, 16,185,129), 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(var(--primary-rgb, 16,185,129), 0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: "50px 50px"
+        }} />
+        {/* Road lines simulation */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-10">
+          <line x1="0" y1="40%" x2="100%" y2="40%" stroke="currentColor" strokeWidth="3" />
+          <line x1="0" y1="65%" x2="100%" y2="65%" stroke="currentColor" strokeWidth="2" />
+          <line x1="35%" y1="0" x2="35%" y2="100%" stroke="currentColor" strokeWidth="3" />
+          <line x1="68%" y1="0" x2="68%" y2="100%" stroke="currentColor" strokeWidth="2" />
+          <rect x="30%" y="35%" width="20%" height="12%" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.5" rx="4" />
+          <rect x="55%" y="42%" width="15%" height="10%" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.5" rx="4" />
         </svg>
+
+        {/* Heatmap overlay */}
+        {showHeatmap && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute bg-red-500/20 rounded-full blur-3xl w-32 h-32" style={{ top: "18%", left: "57%" }} />
+            <div className="absolute bg-amber-500/15 rounded-full blur-3xl w-24 h-24" style={{ top: "48%", left: "43%" }} />
+            <div className="absolute bg-emerald-500/10 rounded-full blur-3xl w-20 h-20" style={{ top: "33%", left: "23%" }} />
+          </div>
+        )}
 
         {/* Entity Markers */}
         {locations.map((loc) => (
           <button
             key={loc.id}
-            onClick={() => setSelectedEntity(loc)}
+            onClick={() => { setSelectedEntity(loc); setIsSheetExpanded(false) }}
             style={{ top: loc.lat, left: loc.lng }}
-            className="absolute -translate-x-1/2 -translate-y-1/2 group transition-all duration-700 hover:scale-125 z-10"
+            className="absolute -translate-x-1/2 -translate-y-1/2 group transition-all duration-300 hover:scale-110 z-10"
           >
-            <div className="relative">
-              {/* Pulse effect for Critical bins */}
-              {loc.status === 'Critical' && (
-                <div className="absolute inset-0 bg-red-500 rounded-2xl animate-ping opacity-30 scale-150"></div>
-              )}
-              
-              <div className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center shadow-2xl transition-all border-4 border-background relative overflow-hidden",
-                loc.type === 'vehicle' ? "bg-blue-600 text-white" :
-                loc.status === 'Optimal' ? "bg-primary text-white" : 
-                loc.status === 'Nominal' ? "bg-amber-500 text-white" : 
-                "bg-red-500 text-white"
-              )}>
-                <div className="absolute inset-0 shimmer opacity-20"></div>
-                {loc.type === 'vehicle' ? (
-                  <Truck size={24} strokeWidth={2.5} />
-                ) : (
-                  <MapPin size={24} strokeWidth={2.5} fill="currentColor" fillOpacity={0.2} />
+            {loc.type === "bin" && (
+              <div className="relative">
+                {(loc.fill ?? 0) > 85 && (
+                  <div className={cn("absolute -inset-2 rounded-full animate-ping opacity-30", statusColor[loc.status as keyof typeof statusColor].bg)} />
                 )}
-              </div>
-
-              {/* Entity Label (Desktop) */}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-4 py-2 ultra-glass border border-foreground/10 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 whitespace-nowrap pointer-events-none transform group-hover:translate-y-1">
-                <p className="text-[10px] font-black uppercase text-foreground tracking-[0.1em]">
-                  {loc.address}
-                </p>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Top Navigation Control */}
-      <div className="absolute top-10 left-10 right-10 md:left-12 md:right-auto md:w-[450px] z-20 animate-in slide-in-from-top-10 duration-1000">
-        <div className="ultra-glass rounded-[2.5rem] p-4 shadow-2xl border border-foreground/10 flex items-center gap-4 group">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-2xl shadow-primary/30 group-hover:rotate-6 transition-transform">
-            <Search size={24} strokeWidth={2.5} />
-          </div>
-          <div className="flex-1">
-             <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">{t("map_subtitle")}</p>
-             <input 
-              type="text" 
-              placeholder={t("bot_placeholder")} 
-              className="bg-transparent border-none outline-none w-full text-sm font-black uppercase tracking-widest text-foreground placeholder:opacity-30"
-            />
-          </div>
-          <button className="w-12 h-12 ultra-glass border border-foreground/5 rounded-2xl text-muted-foreground hover:text-primary transition-all flex items-center justify-center shadow-lg active:scale-90">
-            <Filter size={20} strokeWidth={2.5} />
-          </button>
-        </div>
-      </div>
-
-      {/* Side Tool Array */}
-      <div className="absolute right-10 top-10 flex flex-col gap-5 z-20 animate-in slide-in-from-right-10 duration-1000">
-        {[
-          { icon: Layers, label: "Layers" },
-          { icon: Target, label: "Relocate" },
-          { icon: Activity, label: "Flux" },
-          { icon: Maximize2, label: "Immersive" }
-        ].map((btn, i) => (
-          <button key={i} className="w-16 h-16 ultra-glass rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/20 transition-all shadow-2xl border border-foreground/10 group relative">
-            <btn.icon size={24} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
-            <div className="absolute right-full mr-4 px-3 py-1.5 ultra-glass rounded-xl text-[10px] font-black uppercase tracking-widest text-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-foreground/10">
-               {btn.label}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Tactical Entity Intel (Bottom) */}
-      <div className="absolute bottom-28 md:bottom-12 left-10 right-10 md:left-12 md:right-auto md:w-[480px] z-20 animate-in slide-in-from-bottom-12 duration-1000">
-        <Card className="rounded-[3rem] border-none shadow-2xl overflow-hidden ultra-glass border border-foreground/10 relative">
-          <div className="absolute inset-0 bg-mesh opacity-10"></div>
-          <CardContent className="p-0 relative z-10">
-            <div className="p-10 space-y-8">
-              <div className="flex justify-between items-start gap-6">
-                <div className="space-y-3">
-                  <Badge className={cn(
-                    "px-5 py-2 font-black text-[10px] tracking-[0.2em] border-none uppercase rounded-xl shadow-xl",
-                    selectedEntity.type === 'vehicle' ? "bg-blue-500/10 text-blue-500 shadow-blue-500/10" :
-                    selectedEntity.status === 'Optimal' ? "bg-primary/10 text-primary shadow-primary/10" : 
-                    selectedEntity.status === 'Nominal' ? "bg-amber-500/10 text-amber-500 shadow-amber-500/10" : 
-                    "bg-red-500/10 text-red-500 shadow-red-500/10"
-                  )}>
-                    {selectedEntity.type === 'vehicle' ? 'TELEMETRY ACTIVE' : t(`map_legend_${selectedEntity.status.toLowerCase()}`)}
-                  </Badge>
-                  <h3 className="text-3xl font-black text-foreground tracking-tighter leading-none uppercase">{selectedEntity.address}</h3>
+                <div className={cn(
+                  "w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg border-2 border-background transition-all",
+                  selectedEntity.id === loc.id ? "scale-125 ring-2 ring-primary" : "",
+                  loc.status === "low" ? "bg-emerald-500 text-white" :
+                  loc.status === "medium" ? "bg-amber-500 text-white" : "bg-red-500 text-white"
+                )}>
+                  <Recycle size={18} strokeWidth={2.5} />
                 </div>
-                <button className="w-14 h-14 ultra-glass border border-foreground/5 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-90">
-                  <MoreVertical size={24} strokeWidth={2.5} />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="p-6 rounded-3xl bg-foreground/5 border border-foreground/5 flex flex-col gap-3 group/stat">
-                  <div className="flex items-center gap-3 text-muted-foreground opacity-60">
-                    <Clock size={16} strokeWidth={2.5} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Chronos Log</span>
-                  </div>
-                  <p className="text-sm font-black text-foreground uppercase tracking-tight">{selectedEntity.type === 'vehicle' ? 'LIVE FEED' : selectedEntity.lastCleaned}</p>
+                {/* Fill indicator */}
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-background text-foreground text-[9px] font-black px-1.5 py-0.5 rounded-full border border-border shadow-sm whitespace-nowrap">
+                  {loc.fill}%
                 </div>
-                <div className="p-6 rounded-3xl bg-foreground/5 border border-foreground/5 flex flex-col gap-3 group/stat">
-                  <div className="flex items-center gap-3 text-primary">
-                    <Navigation size={16} strokeWidth={3} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Vector Path</span>
-                  </div>
-                  <p className="text-sm font-black text-foreground uppercase tracking-tight">{selectedEntity.type === 'vehicle' ? selectedEntity.route : selectedEntity.nextPickup}</p>
-                </div>
-              </div>
-
-              <button className="w-full btn-premium py-5 text-[11px] uppercase tracking-[0.2em] shadow-primary/20 flex items-center justify-center gap-4">
-                 <Navigation size={20} strokeWidth={3} />
-                 {t("dashboard_open_map")}
-              </button>
-            </div>
-            
-            {/* Warning Layer for critical entities */}
-            {selectedEntity.status === 'Critical' && (
-              <div className="bg-red-500/10 border-t border-red-500/20 p-6 flex items-center justify-between px-10">
-                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center text-red-500">
-                       <AlertCircle size={20} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                       <p className="text-[11px] font-black text-red-500 uppercase tracking-tight">Anomalous Status</p>
-                       <p className="text-[9px] text-red-500/60 font-black uppercase tracking-widest">Verification Required</p>
-                    </div>
-                 </div>
-                 <button className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline decoration-2 underline-offset-4 transition-all">Create Report</button>
               </div>
             )}
-          </CardContent>
-        </Card>
+            {loc.type === "vehicle" && (
+              <div className={cn("w-11 h-11 rounded-2xl bg-blue-500 text-white flex items-center justify-center shadow-lg border-2 border-background transition-all",
+                selectedEntity.id === loc.id ? "scale-125 ring-2 ring-blue-500" : ""
+              )}>
+                <Truck size={18} strokeWidth={2.5} />
+              </div>
+            )}
+            {loc.type === "complaint" && (
+              <div className={cn("w-11 h-11 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-lg border-2 border-background transition-all",
+                selectedEntity.id === loc.id ? "scale-125 ring-2 ring-orange-500" : ""
+              )}>
+                <AlertTriangle size={18} strokeWidth={2.5} />
+              </div>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Global Status Legend */}
-      <div className="hidden lg:flex absolute bottom-12 right-12 ultra-glass rounded-[2rem] p-8 shadow-2xl flex-col gap-6 z-20 border border-foreground/10 min-w-[240px]">
-        <h4 className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em] pb-4 border-b border-foreground/5">Network Health</h4>
-        <div className="space-y-5">
-           {[
-             { label: t("map_legend_clean"), color: "bg-primary", shadow: "shadow-primary/50" },
-             { label: t("map_legend_medium"), color: "bg-amber-500", shadow: "shadow-amber-500/50" },
-             { label: t("map_legend_full"), color: "bg-red-500", shadow: "shadow-red-500/50" }
-           ].map((l) => (
-             <div key={l.label} className="flex items-center gap-4">
-               <div className={cn("w-3 h-3 rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)]", l.color, l.shadow)}></div>
-               <span className="text-[10px] font-black text-foreground uppercase tracking-widest opacity-80">{l.label}</span>
-             </div>
-           ))}
+      {/* Top Search Bar */}
+      <div className="absolute top-4 left-4 right-16 z-20">
+        <div className="bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg flex items-center gap-3 px-4 py-3">
+          <Search size={18} className="text-muted-foreground flex-shrink-0" />
+          <input
+            type="text"
+            placeholder="Search locations, bins, complaints..."
+            className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground/60"
+          />
         </div>
-        <div className="w-full h-px bg-foreground/5 my-2"></div>
-        <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-xl ultra-glass border border-foreground/10 flex items-center justify-center text-blue-500 shadow-xl">
-             <Truck size={16} strokeWidth={2.5} />
+      </div>
+
+      {/* Right Toolbar */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
+        <button
+          onClick={() => setShowHeatmap(!showHeatmap)}
+          className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg border border-border transition-all",
+            showHeatmap ? "bg-primary text-primary-foreground" : "bg-card/95 backdrop-blur-xl text-muted-foreground hover:text-foreground"
+          )}
+          title="Waste Density Heatmap"
+        >
+          <Layers size={16} />
+        </button>
+        <button
+          onClick={() => setShowTransparency(!showTransparency)}
+          className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg border border-border transition-all",
+            showTransparency ? "bg-primary text-primary-foreground" : "bg-card/95 backdrop-blur-xl text-muted-foreground hover:text-foreground"
+          )}
+          title="Transparency Mode"
+        >
+          <Eye size={16} />
+        </button>
+        <button className="w-10 h-10 rounded-2xl bg-card/95 backdrop-blur-xl border border-border flex items-center justify-center text-muted-foreground hover:text-primary shadow-lg transition-all">
+          <RefreshCw size={16} />
+        </button>
+      </div>
+
+      {/* Legend */}
+      <div className="hidden md:flex absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg px-4 py-2 items-center gap-4">
+        {[
+          { color: "bg-emerald-500", label: "Low Fill" },
+          { color: "bg-amber-500", label: "Medium" },
+          { color: "bg-red-500", label: "Needs Pickup" },
+          { color: "bg-blue-500", label: "Collection Truck" },
+          { color: "bg-orange-500", label: "Complaint" },
+        ].map((l) => (
+          <div key={l.label} className="flex items-center gap-1.5">
+            <div className={cn("w-2.5 h-2.5 rounded-full", l.color)} />
+            <span className="text-[11px] font-medium text-muted-foreground">{l.label}</span>
           </div>
-          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Mobile Unit</span>
+        ))}
+      </div>
+
+      {/* Bottom Sheet — Entity Details */}
+      <div className={cn(
+        "absolute bottom-20 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-20 bg-card/95 backdrop-blur-xl border border-border rounded-3xl shadow-2xl transition-all duration-500",
+        isSheetExpanded ? "max-h-[70vh] overflow-y-auto" : ""
+      )}>
+        {/* Drag handle */}
+        <button
+          onClick={() => setIsSheetExpanded(!isSheetExpanded)}
+          className="w-full flex items-center justify-center py-3"
+        >
+          <div className="w-8 h-1 bg-border rounded-full" />
+        </button>
+
+        <div className="px-5 pb-5">
+          {/* Status badge */}
+          {selectedEntity.type === "bin" && (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <Badge className={cn("text-xs border-none rounded-xl px-3 py-1 font-semibold",
+                  statusColor[selectedEntity.status as keyof typeof statusColor]?.badge
+                )}>
+                  {statusColor[selectedEntity.status as keyof typeof statusColor]?.label}
+                </Badge>
+                <span className="text-xs text-muted-foreground font-medium">{selectedEntity.address}</span>
+              </div>
+
+              {/* Fill level visual */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs text-muted-foreground">Fill Level</span>
+                  <span className="text-sm font-bold text-foreground">{selectedEntity.fill}%</span>
+                </div>
+                <div className="h-3 bg-muted rounded-full overflow-hidden">
+                  <div className={cn("h-full rounded-full transition-all",
+                    selectedEntity.status === "low" ? "bg-emerald-500" :
+                    selectedEntity.status === "medium" ? "bg-amber-500" : "bg-red-500"
+                  )} style={{ width: `${selectedEntity.fill}%` }} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="p-3 bg-muted/40 rounded-2xl">
+                  <Clock size={13} className="text-muted-foreground mb-1.5" />
+                  <p className="text-[10px] text-muted-foreground">Last Cleaned</p>
+                  <p className="text-xs font-bold text-foreground mt-0.5">{selectedEntity.lastCleaned}</p>
+                </div>
+                <div className="p-3 bg-muted/40 rounded-2xl">
+                  <Truck size={13} className="text-muted-foreground mb-1.5" />
+                  <p className="text-[10px] text-muted-foreground">Next Pickup</p>
+                  <p className="text-xs font-bold text-foreground mt-0.5">{selectedEntity.nextPickup}</p>
+                </div>
+              </div>
+
+              <button className="w-full bg-primary text-primary-foreground py-2.5 rounded-2xl text-xs font-bold tracking-wide hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2">
+                <Navigation size={14} /> Get Directions
+              </button>
+            </>
+          )}
+
+          {selectedEntity.type === "vehicle" && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-blue-500/10 rounded-2xl flex items-center justify-center">
+                  <Truck size={20} className="text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">{selectedEntity.address}</p>
+                  <p className="text-xs text-muted-foreground">{selectedEntity.route}</p>
+                </div>
+              </div>
+              <div className="p-3 bg-blue-500/10 rounded-2xl">
+                <p className="text-xs text-muted-foreground">Estimated Arrival</p>
+                <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5">{selectedEntity.eta}</p>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-3">📍 Approximate location shown for privacy.</p>
+            </div>
+          )}
+
+          {selectedEntity.type === "complaint" && (
+            <div>
+              <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-none mb-3">In Progress</Badge>
+              <p className="text-sm font-bold text-foreground mb-2">{selectedEntity.address}</p>
+              <button className="w-full border border-orange-500/30 text-orange-600 dark:text-orange-400 py-2.5 rounded-2xl text-xs font-bold hover:bg-orange-500/10 transition-all">
+                View Complaint Details →
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <style jsx global>{`
-        @keyframes dash {
-          to {
-            stroke-dashoffset: -1000;
-          }
-        }
-      `}</style>
+      {/* Transparency mode overlay */}
+      {showTransparency && (
+        <div className="absolute top-[4.5rem] md:top-4 left-4 z-20 bg-card/90 backdrop-blur-xl border border-border rounded-2xl p-3 shadow-lg">
+          <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">Transparency Mode</p>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              9 bins — good condition
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              2 bins — needs attention
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              1 bin — pickup required
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

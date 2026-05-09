@@ -1,158 +1,196 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { 
-  Bot, 
-  Send, 
-  User, 
-  Sparkles,
-  Search,
-  AlertCircle,
-  MapPin,
-  Cpu,
-  Zap
+  Bot, Send, Mic, Sparkles, User, 
+  Leaf, MapPin, AlertCircle, Search, Recycle,
+  BrainCircuit
 } from "lucide-react"
-import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/components/shared/LanguageProvider"
 
+const suggestedPrompts = [
+  { icon: Recycle, text: "How do I segregate plastic waste?", tag: "Segregation" },
+  { icon: AlertCircle, text: "How do I report an illegal dump?", tag: "Reporting" },
+  { icon: MapPin, text: "Where is the nearest collection center?", tag: "Nearby" },
+  { icon: Leaf, text: "What are Eco Credits and how do I earn them?", tag: "Credits" },
+]
+
+const botResponses: Record<string, string> = {
+  "default": "That's a great question! I'm analyzing your request using my sustainability knowledge base. Based on current data in your area, I'd suggest checking the Transparency Map for real-time information. 🌍",
+  "segregate": "Plastic waste should be divided into: **Hard Plastics** (bottles, containers), **Soft Plastics** (bags, wrappers), and **Composite** (multi-layer packaging). Rinse containers before disposal. In Sector 14, the nearest segregation facility is at the Main Gate smart bin. Your submission earns Eco Credits after AI + weight verification! ♻️",
+  "report": "To report illegal dumping: 1️⃣ Open the Scan Center and select **Report Open Dumping** 2️⃣ Take a photo as evidence 3️⃣ Your GPS location is auto-captured 4️⃣ Select severity level 5️⃣ Submit. Your complaint will receive an AI validation tag and be assigned within 2 hours. You can track progress in the Complaint Center.",
+  "credits": "**Eco Credits** are earned after verified waste submission. Here's how: 🔁 Show your Smart QR to the bin → Waste is weighed → AI camera identifies type → Cloud verification → Credits added. Current rate: ~₹0.50 per 100g verified plastic. Credits can be redeemed in the Marketplace for compost, recycled products, and more!",
+}
+
+interface Message {
+  role: "user" | "bot"
+  content: string
+  timestamp: string
+}
+
 export default function UrjaBot() {
   const { t } = useLanguage()
-  
-  const quickActions = [
-    { text: t("onboarding_2_title"), icon: Search },
-    { text: t("nav_complaints"), icon: AlertCircle },
-    { text: t("dashboard_facilities_title"), icon: MapPin },
-  ]
-
-  const [messages, setMessages] = useState([
-    { role: "bot", content: t("bot_greeting") }
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "bot", content: "Hi! I'm **Urja AI**, your smart sustainability assistant. I can help with waste segregation guidance, complaint support, finding nearby facilities, and more. What would you like to know? 🌱", timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) }
   ])
   const [input, setInput] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const handleSend = () => {
-    if (!input.trim()) return
+  const handleSend = (text?: string) => {
+    const msg = text || input
+    if (!msg.trim()) return
 
-    const newMessages = [...messages, { role: "user", content: input }]
-    setMessages(newMessages)
+    const userMsg: Message = { role: "user", content: msg, timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) }
+    setMessages(prev => [...prev, userMsg])
     setInput("")
+    setIsTyping(true)
 
-    // Simulate bot response
+    const lowerMsg = msg.toLowerCase()
+    let response = botResponses.default
+    if (lowerMsg.includes("segregat") || lowerMsg.includes("plastic") || lowerMsg.includes("separate")) response = botResponses.segregate
+    else if (lowerMsg.includes("report") || lowerMsg.includes("dump") || lowerMsg.includes("illegal")) response = botResponses.report
+    else if (lowerMsg.includes("credit") || lowerMsg.includes("earn") || lowerMsg.includes("reward")) response = botResponses.credits
+
     setTimeout(() => {
-      setMessages(prev => [...prev, { 
-        role: "bot", 
-        content: "That's a great question! I'm analyzing your request using my waste-aware knowledge base. 🌍" 
-      }])
-    }, 1200)
+      setIsTyping(false)
+      setMessages(prev => [...prev, { role: "bot", content: response, timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) }])
+    }, 1400)
   }
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
-  }, [messages])
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+  }, [messages, isTyping])
+
+  // Render message content with basic markdown
+  const renderContent = (content: string) => {
+    const parts = content.split(/\*\*(.*?)\*\*/g)
+    return parts.map((part, i) =>
+      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+    )
+  }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] ultra-glass rounded-[3rem] border border-foreground/10 overflow-hidden shadow-2xl m-4 lg:m-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+    <div className="flex flex-col h-[calc(100vh-5rem)] m-4 lg:m-8 bg-card border border-border rounded-3xl overflow-hidden shadow-sm animate-in fade-in duration-700">
+      
       {/* Header */}
-      <div className="p-8 border-b border-foreground/5 bg-foreground/5 backdrop-blur-xl flex items-center justify-between">
-        <div className="flex items-center gap-5">
+      <div className="p-5 border-b border-border bg-card flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-2xl shadow-primary/30 relative z-10">
-              <Bot size={32} strokeWidth={2.5} />
+            <div className="w-11 h-11 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-sm">
+              <BrainCircuit size={22} strokeWidth={2} />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-4 border-background z-20 animate-pulse"></div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-card" />
           </div>
-          <div className="space-y-0.5">
-            <h1 className="text-2xl font-black text-foreground tracking-tighter uppercase">{t("bot_title")}</h1>
-            <p className="text-[10px] text-primary font-black uppercase tracking-[0.2em] opacity-80">{t("bot_subtitle")}</p>
+          <div>
+            <h1 className="text-sm font-bold text-foreground">{t("bot_title")}</h1>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+              {t("bot_subtitle")}
+            </p>
           </div>
         </div>
-        
-        <div className="hidden md:flex items-center gap-3 ultra-glass border border-foreground/5 px-5 py-2.5 rounded-2xl">
-           <Cpu size={16} className="text-primary" />
-           <span className="text-[10px] font-black uppercase tracking-widest text-foreground">GPT-4 Turbo Integrated</span>
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-muted rounded-xl">
+          <Sparkles size={12} className="text-primary" />
+          <span className="text-[11px] font-semibold text-muted-foreground">AI-Assisted · Not 100% Accurate</span>
         </div>
       </div>
 
-      <ScrollArea className="flex-1 px-8 py-10" ref={scrollRef}>
-        <div className="space-y-10 max-w-4xl mx-auto">
-          {messages.map((m, i) => (
-            <div 
-              key={i} 
-              className={cn(
-                "flex gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500",
-                m.role === "user" ? "flex-row-reverse" : ""
-              )}
-            >
-              <div className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xl border border-foreground/5",
-                m.role === "bot" ? "ultra-glass text-primary" : "bg-primary text-white"
-              )}>
-                {m.role === "bot" ? <Bot size={24} strokeWidth={2.5} /> : <User size={24} strokeWidth={2.5} />}
-              </div>
-              <div className={cn(
-                "max-w-[75%] p-6 rounded-[2rem] text-[13px] font-bold leading-relaxed shadow-xl border border-foreground/5 relative",
-                m.role === "bot" 
-                  ? "ultra-glass text-foreground rounded-tl-none" 
-                  : "bg-primary text-primary-foreground rounded-tr-none shadow-primary/10"
-              )}>
-                {m.content}
-                {m.role === "bot" && (
-                   <div className="absolute -top-3 -right-3 w-8 h-8 ultra-glass rounded-full flex items-center justify-center text-primary/40">
-                      <Sparkles size={12} />
-                   </div>
-                )}
-              </div>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-5 space-y-5" ref={scrollRef}>
+        {messages.map((m, i) => (
+          <div key={i} className={cn("flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
+            m.role === "user" ? "flex-row-reverse" : ""
+          )}>
+            <div className={cn("w-8 h-8 rounded-2xl flex items-center justify-center flex-shrink-0",
+              m.role === "bot" ? "bg-primary/10 text-primary" : "bg-muted border border-border"
+            )}>
+              {m.role === "bot" ? <BrainCircuit size={16} /> : <User size={16} className="text-muted-foreground" />}
             </div>
-          ))}
-          
-          {messages.length === 1 && (
-            <div className="flex flex-col gap-4 pt-10 items-center">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">Autonomous Suggestion Engine</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-                {quickActions.map((action, i) => (
-                  <button 
-                    key={i}
-                    onClick={() => setInput(action.text)}
-                    className="flex flex-col items-center gap-4 p-6 ultra-glass border border-foreground/5 rounded-3xl hover:bg-foreground/5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group text-center"
-                  >
-                    <div className="w-12 h-12 bg-foreground/5 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 group-hover:rotate-6 transition-all border border-foreground/5">
-                      <action.icon size={24} strokeWidth={2.5} />
-                    </div>
-                    <span className="text-[11px] font-black uppercase tracking-widest text-foreground opacity-80">{action.text}</span>
-                  </button>
+            <div className={cn("max-w-[80%] space-y-1",
+              m.role === "user" ? "items-end" : "items-start"
+            )}>
+              <div className={cn("px-4 py-3 rounded-3xl text-sm leading-relaxed",
+                m.role === "bot"
+                  ? "bg-muted/60 border border-border text-foreground rounded-tl-lg"
+                  : "bg-primary text-primary-foreground rounded-tr-lg"
+              )}>
+                {renderContent(m.content)}
+              </div>
+              <p className="text-[10px] text-muted-foreground px-1">{m.timestamp}</p>
+            </div>
+          </div>
+        ))}
+
+        {/* Typing Indicator */}
+        {isTyping && (
+          <div className="flex gap-3 animate-in fade-in duration-300">
+            <div className="w-8 h-8 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+              <BrainCircuit size={16} />
+            </div>
+            <div className="px-4 py-3 bg-muted/60 border border-border rounded-3xl rounded-tl-lg">
+              <div className="flex gap-1.5 items-center">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
                 ))}
               </div>
             </div>
-          )}
-        </div>
-      </ScrollArea>
+          </div>
+        )}
 
-      <div className="p-8 bg-foreground/5 backdrop-blur-2xl border-t border-foreground/5 relative">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex gap-4 relative">
-            <input 
-              placeholder={t("bot_placeholder")} 
+        {/* Suggested Prompts — show only at start */}
+        {messages.length === 1 && (
+          <div className="space-y-3 pt-2">
+            <p className="text-xs font-semibold text-muted-foreground text-center">Suggested Questions</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {suggestedPrompts.map((prompt, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSend(prompt.text)}
+                  className="flex items-center gap-3 p-3 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
+                >
+                  <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-all">
+                    <prompt.icon size={15} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">{prompt.text}</p>
+                    <Badge className="bg-muted text-muted-foreground border-none text-[9px] px-1.5 py-0 mt-0.5">{prompt.tag}</Badge>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="p-4 border-t border-border bg-card">
+        <div className="flex gap-3">
+          <button className="w-11 h-11 bg-muted border border-border rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-all flex-shrink-0">
+            <Mic size={18} />
+          </button>
+          <div className="flex-1 relative">
+            <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              className="flex-1 h-16 px-8 rounded-2xl ultra-glass border border-foreground/10 bg-foreground/5 text-[13px] font-black uppercase tracking-widest text-foreground placeholder:opacity-30 focus:outline-none focus:border-primary/50 transition-all shadow-2xl"
+              placeholder={t("bot_placeholder")}
+              className="w-full px-4 py-3 bg-muted border border-border rounded-2xl text-sm text-foreground outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground/60"
             />
-            <button 
-              onClick={handleSend}
-              className="w-16 h-16 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/30 active:scale-90 transition-all border border-primary/20"
-            >
-              <Send size={24} strokeWidth={3} />
-            </button>
           </div>
-          <div className="flex justify-center items-center gap-3 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-40">
-            <Zap size={12} className="text-primary fill-current" />
-            Hyper-Optimized Response Matrix
-          </div>
+          <button
+            onClick={() => handleSend()}
+            className="w-11 h-11 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-sm hover:opacity-90 transition-all active:scale-95 flex-shrink-0"
+          >
+            <Send size={18} />
+          </button>
         </div>
+        <p className="text-[10px] text-muted-foreground text-center mt-2">
+          AI-assisted responses · Not 100% accurate · Verify critical info
+        </p>
       </div>
     </div>
   )

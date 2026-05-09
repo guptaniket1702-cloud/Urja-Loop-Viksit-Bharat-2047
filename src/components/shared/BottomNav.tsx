@@ -2,62 +2,62 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ShoppingBag, User, Scan, MapPin, Zap } from "lucide-react"
+import { Home, MapPin, QrCode, ShoppingBag, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { name: "Home", href: "/", icon: Home },
   { name: "Map", href: "/map", icon: MapPin },
-  { name: "Scan", href: "#", icon: Scan, isFab: true },
-  { name: "Shop", href: "/shop", icon: ShoppingBag },
-  { name: "Me", href: "/profile", icon: User },
+  { name: "Scan", href: null, icon: QrCode, isScan: true }, // center scan button
+  { name: "Market", href: "/shop", icon: ShoppingBag },
+  { name: "Profile", href: "/profile", icon: User },
 ]
 
-export function BottomNav({ onScanClick }: { onScanClick: () => void }) {
+interface BottomNavProps {
+  onScanClick: () => void
+}
+
+export function BottomNav({ onScanClick }: BottomNavProps) {
   const pathname = usePathname()
 
   return (
-    <nav className="md:hidden fixed bottom-8 left-6 right-6 h-20 ultra-glass rounded-[2.5rem] shadow-2xl z-50 flex items-center justify-between px-6 border border-foreground/10 transition-all duration-700 animate-in slide-in-from-bottom-10">
-      {navItems.map((item) => {
-          if (item.isFab) {
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+      {/* Blur background */}
+      <div className="absolute inset-0 bg-card/80 backdrop-blur-2xl border-t border-border" />
+      
+      <div className="relative flex items-center justify-around px-2 h-[72px]">
+        {navItems.map((item) => {
+          if (item.isScan) {
             return (
               <button
-                key={item.name}
+                key="scan"
                 onClick={onScanClick}
-                className="relative -top-10 flex flex-col items-center justify-center transition-all hover:scale-110 active:scale-90 group"
+                className="relative -mt-6 flex flex-col items-center gap-1"
               >
-                <div className="w-16 h-16 bg-primary rounded-[1.75rem] flex items-center justify-center shadow-2xl shadow-primary/40 text-primary-foreground border-4 border-background relative overflow-hidden group-hover:rotate-6 transition-all duration-500">
-                   <div className="absolute inset-0 bg-mesh opacity-20"></div>
-                   <item.icon size={28} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+                {/* Central scan button */}
+                <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 hover:opacity-90 active:scale-95 transition-all">
+                  <item.icon size={26} className="text-primary-foreground" strokeWidth={2} />
                 </div>
-                <div className="absolute -inset-2 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <span className="text-[10px] font-semibold text-primary">Scan</span>
               </button>
             )
           }
-
-          const isActive = pathname === item.href
+          const isActive = item.href && pathname === item.href
           return (
             <Link
               key={item.name}
-              href={item.href}
+              href={item.href!}
               className={cn(
-                "flex flex-col items-center justify-center gap-1.5 transition-all duration-500 relative group",
-                isActive ? "text-primary" : "text-muted-foreground/40 hover:text-primary/60"
+                "flex flex-col items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all",
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <div className={cn(
-                "p-2.5 rounded-2xl transition-all duration-500 relative",
-                isActive && "bg-primary/10 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
-              )}>
-                <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.5} className={cn("transition-all duration-500", isActive && "scale-110")} />
-              </div>
-              {isActive && (
-                <div className="absolute -bottom-1 w-1 h-1 bg-primary rounded-full shadow-[0_0_12px_rgba(16,185,129,1)]"></div>
-              )}
+              <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+              <span className={cn("text-[10px] font-semibold", isActive ? "font-bold" : "")}>{item.name}</span>
             </Link>
           )
-      })}
+        })}
+      </div>
     </nav>
   )
 }
-

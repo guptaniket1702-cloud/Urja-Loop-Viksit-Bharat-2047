@@ -1,30 +1,14 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { 
-  QrCode, 
-  Search, 
-  AlertCircle, 
-  Camera, 
-  MapPin, 
-  CheckCircle2, 
-  Loader2,
-  ChevronLeft,
-  ScanLine,
-  Zap,
-  Target,
-  Leaf,
-  ShieldAlert,
-  Fingerprint
+  QrCode, Search, AlertCircle, Camera, MapPin,
+  CheckCircle2, Loader2, ChevronLeft, ScanLine,
+  Zap, Target, Leaf, ShieldCheck, Download, Expand,
+  Recycle, Navigation
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 interface ScanModalProps {
@@ -32,328 +16,427 @@ interface ScanModalProps {
   onClose: () => void
 }
 
-type ScanView = "main" | "qr" | "identify" | "report"
+type ScanView = "main" | "myqr" | "identify" | "report" | "checkin"
+
+const SCAN_ACTIONS = [
+  {
+    id: "myqr" as ScanView,
+    title: "My Smart QR",
+    desc: "Show to smart bin to submit waste & earn credits",
+    icon: QrCode,
+    color: "bg-blue-500",
+    shadow: "shadow-blue-500/20",
+  },
+  {
+    id: "identify" as ScanView,
+    title: "Identify Waste",
+    desc: "AI-assisted material classification in seconds",
+    icon: Search,
+    color: "bg-primary",
+    shadow: "shadow-primary/20",
+  },
+  {
+    id: "report" as ScanView,
+    title: "Report Open Dumping",
+    desc: "Flag illegal waste with photo + GPS evidence",
+    icon: AlertCircle,
+    color: "bg-amber-500",
+    shadow: "shadow-amber-500/20",
+  },
+  {
+    id: "checkin" as ScanView,
+    title: "Collection Center Check-in",
+    desc: "Verify drop-off at registered collection points",
+    icon: Navigation,
+    color: "bg-emerald-500",
+    shadow: "shadow-emerald-500/20",
+  },
+]
+
+const WASTE_RESULTS = [
+  { type: "Plastic PET", subtype: "Recyclable Polymer", confidence: 94, disposal: "Yellow bin — Dry Waste", icon: Recycle, tip: "Rinse before disposal for higher credit value." },
+  { type: "Organic Waste", subtype: "Biodegradable", confidence: 88, disposal: "Green bin — Wet Waste", icon: Leaf, tip: "Can be composted. High value for Eco Credits." },
+  { type: "Glass Container", subtype: "Non-hazardous", confidence: 91, disposal: "Blue bin — Glass Waste", icon: Recycle, tip: "Remove lids before disposal." },
+]
 
 export function ScanModal({ isOpen, onClose }: ScanModalProps) {
   const [view, setView] = useState<ScanView>("main")
   const [status, setStatus] = useState<"idle" | "loading" | "success">("idle")
-  
-  // Camera state
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const [wasteResult] = useState(WASTE_RESULTS[0])
 
   const startCamera = async () => {
     setCameraError(null)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      })
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
       streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-      }
-    } catch (err) {
-      setCameraError("Camera access denied or unavailable.")
-      console.error(err)
+      if (videoRef.current) videoRef.current.srcObject = stream
+    } catch {
+      setCameraError("Camera access denied. Please enable camera permissions.")
     }
   }
 
   const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
-    }
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
   }
 
   useEffect(() => {
-    if (isOpen && view !== "main" && status === "idle") {
+    if (isOpen && (view === "identify" || view === "report") && status === "idle") {
       startCamera()
     } else {
       stopCamera()
     }
-
     return () => stopCamera()
   }, [isOpen, view, status])
-
-  const handleAction = (actionView: ScanView) => {
-    setView(actionView)
-    setStatus("idle")
-  }
 
   const handleCapture = () => {
     setStatus("loading")
     stopCamera()
-    
-    setTimeout(() => {
-      setStatus("success")
-    }, 1800)
+    setTimeout(() => setStatus("success"), 2000)
   }
 
-  const resetModal = () => {
+  const reset = () => {
     setView("main")
     setStatus("idle")
     setCameraError(null)
     onClose()
   }
 
-  const handleBack = () => {
+  const back = () => {
     setView("main")
     setStatus("idle")
     setCameraError(null)
   }
 
+  const titles: Record<ScanView, string> = {
+    main: "Scan Center",
+    myqr: "My Smart QR",
+    identify: "Identify Waste",
+    report: "Report Dumping",
+    checkin: "Collection Check-in",
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={resetModal}>
-      <DialogContent className="sm:max-w-md rounded-t-[3rem] sm:rounded-[3rem] border-none p-0 overflow-hidden ultra-glass shadow-2xl">
-        <div className="p-8">
-          <DialogHeader className="flex flex-row items-center justify-between space-y-0 mb-8">
-            <div className="flex items-center gap-3">
-              {view !== "main" && (
-                <button onClick={handleBack} className="p-2.5 rounded-xl ultra-glass text-muted-foreground hover:text-primary transition-all active:scale-90">
-                  <ChevronLeft size={22} strokeWidth={2.5} />
-                </button>
-              )}
-              <DialogTitle className="text-2xl font-black text-foreground tracking-tighter">
-                {view === "main" && "Action Center"}
-                {view === "qr" && "Terminal Scan"}
-                {view === "identify" && "Neural ID"}
-                {view === "report" && "Incident Log"}
-              </DialogTitle>
-            </div>
-          </DialogHeader>
-
+    <Dialog open={isOpen} onOpenChange={reset}>
+      <DialogContent className="sm:max-w-sm rounded-t-3xl sm:rounded-3xl border border-border bg-card p-0 overflow-hidden shadow-2xl max-h-[92vh] overflow-y-auto">
+        
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-4 flex items-center gap-3">
+          {view !== "main" && (
+            <button onClick={back} className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center hover:bg-muted/80 transition-all">
+              <ChevronLeft size={18} className="text-muted-foreground" />
+            </button>
+          )}
+          <DialogTitle className="text-base font-bold text-foreground">{titles[view]}</DialogTitle>
           {view === "main" && (
-            <div className="grid gap-4">
-              <button
-                onClick={() => handleAction("qr")}
-                className="flex items-center gap-5 p-5 rounded-3xl border-none ultra-glass bg-foreground/5 hover:bg-foreground/10 transition-all hover:scale-[1.02] active:scale-[0.98] text-left group shadow-xl"
-              >
-                <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 group-hover:rotate-6 transition-transform">
-                  <QrCode size={28} strokeWidth={2.5} />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <h3 className="font-black text-foreground text-lg tracking-tight group-hover:text-blue-500 transition-colors uppercase text-sm">Scan QR Code</h3>
-                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">Authorize bin access & earn</p>
-                </div>
-              </button>
+            <Badge className="ml-auto bg-primary/10 text-primary border-none text-[10px] px-2 py-0.5 font-semibold rounded-full">4 Actions</Badge>
+          )}
+        </div>
 
-              <button
-                onClick={() => handleAction("identify")}
-                className="flex items-center gap-5 p-5 rounded-3xl border-none ultra-glass bg-foreground/5 hover:bg-foreground/10 transition-all hover:scale-[1.02] active:scale-[0.98] text-left group shadow-xl"
-              >
-                <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary/30 group-hover:rotate-6 transition-transform">
-                  <Search size={28} strokeWidth={2.5} />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <h3 className="font-black text-foreground text-lg tracking-tight group-hover:text-primary transition-colors uppercase text-sm">Analyze Material</h3>
-                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">AI classification in real-time</p>
-                </div>
-              </button>
+        <div className="p-5">
 
-              <button
-                onClick={() => handleAction("report")}
-                className="flex items-center gap-5 p-5 rounded-3xl border-none ultra-glass bg-foreground/5 hover:bg-foreground/10 transition-all hover:scale-[1.02] active:scale-[0.98] text-left group shadow-xl"
-              >
-                <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-500/30 group-hover:rotate-6 transition-transform">
-                  <AlertCircle size={28} strokeWidth={2.5} />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <h3 className="font-black text-foreground text-lg tracking-tight group-hover:text-amber-500 transition-colors uppercase text-sm">Report Dumping</h3>
-                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">Flag violations & tag location</p>
-                </div>
-              </button>
+          {/* === MAIN VIEW === */}
+          {view === "main" && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground mb-4">Select an action to get started. All submissions are AI-verified.</p>
+              {SCAN_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  onClick={() => { setView(action.id); setStatus("idle") }}
+                  className="w-full flex items-center gap-4 p-4 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-muted/30 transition-all group text-left"
+                >
+                  <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white flex-shrink-0 shadow-lg", action.color, action.shadow)}>
+                    <action.icon size={22} strokeWidth={2} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{action.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{action.desc}</p>
+                  </div>
+                </button>
+              ))}
             </div>
           )}
 
-          {/* QR View Content */}
-          {view === "qr" && (
-            <div className="flex flex-col items-center justify-center gap-8 text-center animate-in fade-in duration-500">
-              {status === "idle" && (
-                <>
-                  <div className="w-full aspect-square rounded-[2rem] overflow-hidden relative bg-slate-950 flex items-center justify-center shadow-2xl border-4 border-foreground/5">
-                    {cameraError ? (
-                      <div className="text-red-400 text-sm font-bold p-6">{cameraError}</div>
-                    ) : (
-                      <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover opacity-80"></video>
+          {/* === MY SMART QR VIEW === */}
+          {view === "myqr" && (
+            <div className="flex flex-col items-center gap-5 py-2">
+              {/* Instruction */}
+              <div className="w-full p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-center">
+                <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">Show this QR code to the smart bin scanner to submit your waste and earn Eco Credits.</p>
+              </div>
+
+              {/* QR Code */}
+              <div className="relative p-4 bg-white rounded-3xl shadow-xl">
+                <div className="w-52 h-52 bg-white">
+                  {/* Simulated QR pattern */}
+                  <svg viewBox="0 0 200 200" className="w-full h-full">
+                    {/* QR corner squares */}
+                    <rect x="10" y="10" width="50" height="50" fill="none" stroke="#111" strokeWidth="8" rx="4" />
+                    <rect x="20" y="20" width="30" height="30" fill="#111" rx="2" />
+                    <rect x="140" y="10" width="50" height="50" fill="none" stroke="#111" strokeWidth="8" rx="4" />
+                    <rect x="150" y="20" width="30" height="30" fill="#111" rx="2" />
+                    <rect x="10" y="140" width="50" height="50" fill="none" stroke="#111" strokeWidth="8" rx="4" />
+                    <rect x="20" y="150" width="30" height="30" fill="#111" rx="2" />
+                    {/* Data dots pattern */}
+                    {[70,80,90,100,110,120,130].map((x) =>
+                      [70,80,90,100,110,120,130].map((y) =>
+                        Math.random() > 0.5 ? <rect key={`${x}-${y}`} x={x} y={y} width="8" height="8" fill="#111" rx="1" /> : null
+                      )
                     )}
-                    {/* Scanner Overlay */}
-                    <div className="absolute inset-0 border-[60px] border-black/60 pointer-events-none z-10 flex items-center justify-center">
-                       <div className="w-full h-full border-2 border-blue-500 rounded-2xl relative">
-                          <div className="absolute top-0 left-0 w-full h-0.5 bg-blue-500 shadow-[0_0_15px_4px_rgba(59,130,246,0.6)] animate-[scan_2s_ease-in-out_infinite]"></div>
-                       </div>
-                    </div>
-                  </div>
-                  <button onClick={handleCapture} disabled={!!cameraError} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-5 rounded-2xl font-black tracking-widest shadow-2xl shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase text-xs">
-                    <ScanLine size={20} strokeWidth={3} /> Authorize Bin
-                  </button>
-                </>
-              )}
-
-              {status === "loading" && (
-                 <div className="py-20 flex flex-col items-center gap-6">
-                    <div className="relative">
-                      <Loader2 className="w-16 h-16 animate-spin text-blue-500" strokeWidth={3} />
-                      <div className="absolute inset-0 blur-xl bg-blue-500/20 rounded-full animate-pulse"></div>
-                    </div>
-                    <p className="font-black text-muted-foreground uppercase tracking-widest animate-pulse text-xs">Connecting Securely...</p>
-                 </div>
-              )}
-
-              {status === "success" && (
-                <div className="py-6 w-full flex flex-col items-center animate-in slide-in-from-bottom-8 duration-700">
-                  <div className="w-24 h-24 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/10 rotate-6">
-                    <CheckCircle2 size={48} strokeWidth={2.5} />
-                  </div>
-                  <h2 className="text-3xl font-black text-foreground tracking-tighter mb-2">Access Granted</h2>
-                  <p className="text-muted-foreground font-bold text-xs uppercase tracking-widest mb-8">Bin #402 Unlock Sequence Complete</p>
-                  
-                  <div className="w-full bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl mb-8 flex justify-between items-center group overflow-hidden relative">
-                    <div className="absolute inset-0 shimmer opacity-10"></div>
-                    <div className="text-left relative z-10">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Incentive Added</p>
-                      <p className="text-2xl font-black text-emerald-600 tabular-nums">+10.00 Credits</p>
-                    </div>
-                    <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white relative z-10">
-                       <Zap size={24} fill="currentColor" />
-                    </div>
-                  </div>
-                  
-                  <button onClick={resetModal} className="w-full btn-premium py-5 text-xs tracking-widest uppercase">
-                    Back to Terminal
-                  </button>
+                    {/* Center logo */}
+                    <rect x="85" y="85" width="30" height="30" fill="white" rx="4" />
+                    <text x="100" y="106" textAnchor="middle" fontSize="18" fill="#10b981">♻</text>
+                  </svg>
                 </div>
-              )}
+                <div className="absolute inset-0 rounded-3xl ring-2 ring-primary/20" />
+              </div>
+
+              {/* Eco ID */}
+              <div className="w-full p-4 bg-muted border border-border rounded-2xl">
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">Your Eco ID</p>
+                <p className="text-sm font-bold text-foreground tracking-widest">URJA-9821-DL14-AXH</p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <ShieldCheck size={12} className="text-primary" />
+                  <span className="text-[11px] text-primary font-semibold">AI Verification Enabled</span>
+                </div>
+              </div>
+
+              {/* How the bin works */}
+              <div className="w-full space-y-2">
+                <p className="text-xs font-bold text-foreground">How it works</p>
+                {[
+                  "User shows this QR to the smart bin scanner",
+                  "Bin authenticates your Eco ID",
+                  "Waste slot unlocks for deposit",
+                  "AI camera identifies waste type",
+                  "Weight sensor measures quantity",
+                  "Eco Credits awarded after verification",
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</div>
+                    <p className="text-xs text-muted-foreground">{step}</p>
+                  </div>
+                ))}
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2 px-1">⚠️ Credits awarded only after AI + sensor verification. Minimum measurable quantity required.</p>
+              </div>
+
+              <div className="flex gap-3 w-full">
+                <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-muted border border-border rounded-2xl text-xs font-bold text-foreground hover:bg-muted/80 transition-all">
+                  <Download size={14} /> Save QR
+                </button>
+                <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground rounded-2xl text-xs font-bold hover:opacity-90 transition-all">
+                  <Expand size={14} /> Expand
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Identify View Content */}
+          {/* === IDENTIFY WASTE VIEW === */}
           {view === "identify" && (
-            <div className="flex flex-col items-center justify-center gap-8 text-center animate-in fade-in duration-500">
+            <div className="flex flex-col gap-5">
               {status === "idle" && (
                 <>
-                  <div className="w-full aspect-square rounded-[2rem] overflow-hidden relative bg-slate-950 flex items-center justify-center shadow-2xl border-4 border-foreground/5">
+                  {/* Camera */}
+                  <div className="aspect-square w-full rounded-3xl overflow-hidden bg-black relative">
                     {cameraError ? (
-                      <div className="text-red-400 text-sm font-bold p-6">{cameraError}</div>
+                      <div className="w-full h-full flex items-center justify-center p-6">
+                        <p className="text-red-400 text-sm text-center">{cameraError}</p>
+                      </div>
                     ) : (
-                      <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover opacity-80"></video>
+                      <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                     )}
-                    {/* AI Target Overlay */}
-                    <div className="absolute inset-12 border-2 border-foreground/10 rounded-full pointer-events-none z-10 animate-[pulse_2s_infinite]">
-                       <Target className="absolute inset-0 m-auto text-primary opacity-40" size={48} strokeWidth={1} />
+                    {/* AI scan overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-40 h-40 border-2 border-primary rounded-2xl relative">
+                        {/* Corner accents */}
+                        {[["top-0 left-0", "-translate-x-1 -translate-y-1"], ["top-0 right-0", "translate-x-1 -translate-y-1"], ["bottom-0 left-0", "-translate-x-1 translate-y-1"], ["bottom-0 right-0", "translate-x-1 translate-y-1"]].map(([pos, tr], i) => (
+                          <div key={i} className={cn("absolute w-4 h-4 border-t-2 border-l-2 border-primary", pos)} />
+                        ))}
+                        <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/60 animate-[scan_2s_ease-in-out_infinite]" />
+                      </div>
                     </div>
-                    <div className="absolute inset-0 border-[60px] border-black/40 pointer-events-none z-10"></div>
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                      <Badge className="bg-primary/90 text-primary-foreground text-[10px] border-none">AI-Assisted Classification · Not 100% accurate</Badge>
+                    </div>
                   </div>
-                  <button onClick={handleCapture} disabled={!!cameraError} className="w-full btn-premium py-5 text-xs tracking-widest uppercase">
-                    <Camera size={20} strokeWidth={3} /> Process Image
+                  
+                  <button onClick={handleCapture} disabled={!!cameraError}
+                    className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 disabled:opacity-40">
+                    <Camera size={18} /> Capture & Identify
                   </button>
                 </>
               )}
 
               {status === "loading" && (
-                 <div className="py-20 flex flex-col items-center gap-6 text-primary">
-                   <div className="relative">
-                      <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                         <Search size={24} />
-                      </div>
-                   </div>
-                   <p className="font-black uppercase tracking-widest animate-pulse text-xs">Neural Network Analysis...</p>
-                 </div>
+                <div className="py-16 flex flex-col items-center gap-4">
+                  <div className="relative">
+                    <div className="w-14 h-14 border-3 border-primary border-t-transparent rounded-full animate-spin border-[3px]" />
+                    <Search size={20} className="absolute inset-0 m-auto text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-muted-foreground animate-pulse">AI analyzing material...</p>
+                  <p className="text-xs text-muted-foreground text-center">Using computer vision to classify waste type. Results are AI-assisted estimates.</p>
+                </div>
               )}
 
               {status === "success" && (
-                <div className="py-2 w-full flex flex-col items-center animate-in slide-in-from-bottom-8 duration-700">
-                  <div className="w-full h-56 bg-muted rounded-[2rem] relative overflow-hidden group mb-8 shadow-2xl">
-                    <img src="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=400" className="object-cover w-full h-full opacity-90 group-hover:scale-105 transition-transform duration-1000" alt="Waste" />
-                    <div className="absolute top-4 right-4">
-                      <Badge className="bg-primary text-primary-foreground border-none shadow-xl px-4 py-2 font-black text-[10px] tracking-widest uppercase">98% CONFIDENCE</Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="w-full space-y-6">
-                    <div className="flex justify-between items-center text-left ultra-glass p-6 rounded-3xl border border-foreground/10 shadow-xl">
-                      <div className="space-y-1">
-                        <h2 className="text-2xl font-black tracking-tight text-foreground">Plastic PET</h2>
-                        <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Type: Recyclable</p>
-                        </div>
+                <div className="space-y-4">
+                  {/* Result Card */}
+                  <div className="p-5 bg-primary/5 border border-primary/20 rounded-3xl">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Detected Material</p>
+                        <p className="text-xl font-bold text-foreground">{wasteResult.type}</p>
+                        <p className="text-xs text-muted-foreground">{wasteResult.subtype}</p>
                       </div>
-                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
-                         <Leaf size={24} strokeWidth={2.5} />
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary">{wasteResult.confidence}%</div>
+                        <p className="text-[10px] text-muted-foreground">AI Confidence</p>
+                      </div>
                     </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${wasteResult.confidence}%` }} />
                     </div>
-                    
-                    <button onClick={resetModal} className="w-full bg-foreground text-background py-5 rounded-2xl font-black tracking-widest uppercase text-xs shadow-2xl active:scale-95 transition-all">
-                      Open Disposal Protocol
-                    </button>
                   </div>
+
+                  {/* Disposal guidance */}
+                  <div className="p-4 bg-muted border border-border rounded-2xl space-y-2">
+                    <p className="text-xs font-bold text-foreground">Disposal Guidance</p>
+                    <p className="text-sm font-semibold text-primary">{wasteResult.disposal}</p>
+                    <p className="text-xs text-muted-foreground">{wasteResult.tip}</p>
+                  </div>
+
+                  <p className="text-[10px] text-muted-foreground text-center">AI-assisted result · Verify with local guidelines · Not guaranteed accurate</p>
+                  
+                  <button onClick={() => { setStatus("idle"); startCamera() }}
+                    className="w-full border border-border py-3 rounded-2xl text-xs font-bold text-foreground hover:bg-muted transition-all">
+                    Scan Another Item
+                  </button>
+                  <button onClick={reset} className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-xs font-bold hover:opacity-90 transition-all">
+                    Done
+                  </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* Report View Content */}
+          {/* === REPORT DUMPING VIEW === */}
           {view === "report" && (
-            <div className="flex flex-col items-center justify-center gap-8 text-left animate-in fade-in duration-500">
+            <div className="flex flex-col gap-4">
               {status === "idle" && (
-                 <>
-                   <div className="w-full aspect-[4/3] rounded-[2rem] overflow-hidden relative bg-slate-950 flex items-center justify-center shadow-2xl border-4 border-foreground/5">
-                     {cameraError ? (
-                       <div className="text-red-400 text-sm font-bold p-6">{cameraError}</div>
-                     ) : (
-                       <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover opacity-80"></video>
-                     )}
-                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-                        <div className="w-16 h-16 border-2 border-amber-500 rounded-full flex items-center justify-center border-dashed animate-[spin_10s_linear_infinite]">
-                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                        </div>
-                     </div>
-                   </div>
-                   
-                   <div className="w-full ultra-glass p-5 rounded-3xl border border-foreground/10 flex items-start gap-4">
-                     <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 shrink-0">
-                        <MapPin size={20} strokeWidth={2.5} />
-                     </div>
-                     <div>
-                       <h4 className="text-xs font-black text-foreground uppercase tracking-widest">Geolocation Active</h4>
-                       <p className="text-[10px] text-muted-foreground font-bold mt-1">Sector 14 Market • Block C • Entry Point</p>
-                     </div>
-                   </div>
+                <>
+                  <div className="aspect-video w-full rounded-3xl overflow-hidden bg-black relative">
+                    {cameraError ? (
+                      <div className="w-full h-full flex items-center justify-center p-6">
+                        <p className="text-red-400 text-sm text-center">{cameraError}</p>
+                      </div>
+                    ) : (
+                      <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                    )}
+                    <div className="absolute inset-0 border-2 border-amber-500/40 m-4 rounded-2xl pointer-events-none">
+                      <Badge className="absolute top-3 left-3 bg-amber-500 text-white text-[10px] border-none">Live GPS Active</Badge>
+                    </div>
+                  </div>
 
-                   <button onClick={handleCapture} disabled={!!cameraError} className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white py-5 rounded-2xl font-black tracking-widest uppercase text-xs shadow-2xl shadow-amber-500/30 active:scale-95 transition-all flex items-center justify-center gap-3">
-                     <Camera size={20} strokeWidth={3} /> Submit Evidence
-                   </button>
-                 </>
+                  {/* Location */}
+                  <div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                    <MapPin size={16} className="text-amber-500 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Location Detected</p>
+                      <p className="text-[11px] text-muted-foreground">Sector 14 Market · Block C · New Delhi</p>
+                    </div>
+                  </div>
+
+                  {/* Severity */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground">Severity Level</p>
+                    <div className="flex gap-2">
+                      {["Low", "Medium", "High"].map((l) => (
+                        <button key={l} className={cn("flex-1 py-2 rounded-xl text-xs font-bold border",
+                          l === "High" ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400" :
+                          l === "Medium" ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400" :
+                          "border-border bg-muted text-muted-foreground"
+                        )}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button onClick={handleCapture} disabled={!!cameraError}
+                    className="w-full bg-amber-500 text-white py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 disabled:opacity-40">
+                    <Camera size={18} /> Submit Evidence
+                  </button>
+                </>
               )}
 
               {status === "loading" && (
-                 <div className="py-20 flex flex-col items-center gap-6 w-full">
-                   <div className="relative">
-                      <Loader2 className="w-14 h-14 animate-spin text-amber-500" strokeWidth={3} />
-                      <div className="absolute inset-0 blur-xl bg-amber-500/20 rounded-full animate-pulse"></div>
-                   </div>
-                   <p className="font-black text-muted-foreground uppercase tracking-widest animate-pulse text-xs">Syncing with Authorities...</p>
-                 </div>
+                <div className="py-16 flex flex-col items-center gap-4">
+                  <Loader2 className="w-12 h-12 animate-spin text-amber-500" strokeWidth={2.5} />
+                  <p className="text-sm font-semibold text-muted-foreground animate-pulse">Submitting report...</p>
+                </div>
               )}
 
               {status === "success" && (
-                 <div className="py-8 w-full flex flex-col items-center text-center animate-in slide-in-from-bottom-8 duration-700">
-                   <div className="w-24 h-24 bg-amber-500/10 text-amber-500 rounded-[2rem] flex items-center justify-center mb-6 shadow-xl shadow-amber-500/10 rotate-6">
-                     <CheckCircle2 size={48} strokeWidth={2.5} />
-                   </div>
-                   <h2 className="text-3xl font-black text-foreground tracking-tighter mb-2">Report Logged</h2>
-                   <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-10 max-w-[280px]">
-                     Environmental protection unit has been dispatched for verification.
-                   </p>
-                   <button onClick={resetModal} className="w-full bg-foreground text-background py-5 rounded-2xl font-black tracking-widest uppercase text-xs shadow-2xl active:scale-95 transition-all">
-                     Return to Dashboard
-                   </button>
-                 </div>
+                <div className="py-8 flex flex-col items-center gap-4 text-center">
+                  <div className="w-16 h-16 bg-emerald-500/10 rounded-3xl flex items-center justify-center">
+                    <CheckCircle2 size={32} className="text-emerald-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">Report Submitted</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Reference: RPT-2024-05-09-001</p>
+                  </div>
+                  <div className="w-full p-4 bg-muted border border-border rounded-2xl text-left space-y-1">
+                    <p className="text-xs font-semibold text-foreground">What happens next?</p>
+                    <p className="text-xs text-muted-foreground">Your report will be AI-validated and assigned to the nearest response team within 2 hours. Track progress in the Complaint Center.</p>
+                  </div>
+                  <button onClick={reset} className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-xs font-bold hover:opacity-90 transition-all">
+                    Track in Complaint Center →
+                  </button>
+                </div>
               )}
             </div>
           )}
+
+          {/* === COLLECTION CHECK-IN VIEW === */}
+          {view === "checkin" && (
+            <div className="flex flex-col gap-4">
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Verify your waste drop-off at registered collection centers to earn verified Eco Credits.</p>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-foreground">Nearby Collection Centers</p>
+                {[
+                  { name: "Sector 14 Smart Hub", distance: "0.3 km", type: "All Waste Types", open: true },
+                  { name: "Green Valley Recycler", distance: "1.1 km", type: "Dry Waste Only", open: true },
+                  { name: "Municipal Compost Center", distance: "2.4 km", type: "Organic Waste", open: false },
+                ].map((center, i) => (
+                  <button key={i} className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-muted/30 transition-all text-left">
+                    <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0",
+                      center.open ? "bg-emerald-500/10 text-emerald-500" : "bg-muted text-muted-foreground"
+                    )}>
+                      <Recycle size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{center.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{center.type} · {center.distance}</p>
+                    </div>
+                    <Badge className={cn("text-[10px] border-none rounded-full px-2 flex-shrink-0",
+                      center.open ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"
+                    )}>
+                      {center.open ? "Open" : "Closed"}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+
+              <button onClick={reset} className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-xs font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                <Navigation size={14} /> Get Directions
+              </button>
+            </div>
+          )}
+
         </div>
       </DialogContent>
     </Dialog>
