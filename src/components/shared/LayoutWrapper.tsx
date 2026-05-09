@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { BottomNav } from "./BottomNav"
 import { Sidebar } from "./Sidebar"
 import { ScanModal } from "./ScanModal"
+import { Footer } from "./Footer"
 
 const AUTH_ROUTES = ["/splash", "/onboarding", "/login", "/verify-otp", "/setup-profile", "/permissions"]
 
@@ -39,11 +40,13 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar />
-      <main className="flex-1 w-full overflow-x-hidden">
-        {/* Page content with max-width constraint on large screens */}
-        <div className="w-full max-w-4xl mx-auto">
+      <main className="flex-1 w-full overflow-x-hidden flex flex-col">
+        {/* Page content */}
+        <div className="flex-1 w-full max-w-4xl mx-auto">
           {children}
         </div>
+        {/* Premium footer — visible on all main pages */}
+        <Footer />
       </main>
       <BottomNav onScanClick={() => setIsScanModalOpen(true)} />
       <ScanModal
