@@ -6,19 +6,20 @@ import {
   QrCode, Search, AlertCircle, Camera, MapPin,
   CheckCircle2, Loader2, ChevronLeft, ScanLine,
   Zap, Target, Leaf, ShieldCheck, Download, Expand,
-  Recycle, Navigation
+  Recycle, Navigation, Tractor, Wheat
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useMode } from "@/components/shared/ModeProvider"
 
 interface ScanModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-type ScanView = "main" | "myqr" | "identify" | "report" | "checkin"
+type ScanView = "main" | "myqr" | "identify" | "report" | "checkin" | "agri" | "pickup"
 
-const SCAN_ACTIONS = [
+const URBAN_ACTIONS = [
   {
     id: "myqr" as ScanView,
     title: "My Smart QR",
@@ -53,6 +54,41 @@ const SCAN_ACTIONS = [
   },
 ]
 
+const RURAL_ACTIONS = [
+  {
+    id: "myqr" as ScanView,
+    title: "Farmer QR",
+    desc: "Show at processing units to log waste & earn",
+    icon: QrCode,
+    color: "bg-amber-500",
+    shadow: "shadow-amber-500/20",
+  },
+  {
+    id: "agri" as ScanView,
+    title: "Upload Agri Waste",
+    desc: "AI identifies crop residue & estimates value",
+    icon: Wheat,
+    color: "bg-emerald-500",
+    shadow: "shadow-emerald-500/20",
+  },
+  {
+    id: "pickup" as ScanView,
+    title: "Request Pickup",
+    desc: "Schedule transport for large agricultural waste",
+    icon: Tractor,
+    color: "bg-blue-500",
+    shadow: "shadow-blue-500/20",
+  },
+  {
+    id: "checkin" as ScanView,
+    title: "Center Check-in",
+    desc: "Verify drop-off at rural collection hubs",
+    icon: Navigation,
+    color: "bg-primary",
+    shadow: "shadow-primary/20",
+  },
+]
+
 const WASTE_RESULTS = [
   { type: "Plastic PET", subtype: "Recyclable Polymer", confidence: 94, disposal: "Yellow bin — Dry Waste", icon: Recycle, tip: "Rinse before disposal for higher credit value." },
   { type: "Organic Waste", subtype: "Biodegradable", confidence: 88, disposal: "Green bin — Wet Waste", icon: Leaf, tip: "Can be composted. High value for Eco Credits." },
@@ -60,6 +96,7 @@ const WASTE_RESULTS = [
 ]
 
 export function ScanModal({ isOpen, onClose }: ScanModalProps) {
+  const { mode } = useMode()
   const [view, setView] = useState<ScanView>("main")
   const [status, setStatus] = useState<"idle" | "loading" | "success">("idle")
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -113,11 +150,15 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
 
   const titles: Record<ScanView, string> = {
     main: "Scan Center",
-    myqr: "My Smart QR",
+    myqr: mode === "rural" ? "Farmer QR" : "My Smart QR",
     identify: "Identify Waste",
     report: "Report Dumping",
     checkin: "Collection Check-in",
+    agri: "Upload Agri Waste",
+    pickup: "Request Pickup",
   }
+
+  const currentActions = mode === "rural" ? RURAL_ACTIONS : URBAN_ACTIONS
 
   return (
     <Dialog open={isOpen} onOpenChange={reset}>
@@ -142,7 +183,7 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
           {view === "main" && (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground mb-4">Select an action to get started. All submissions are AI-verified.</p>
-              {SCAN_ACTIONS.map((action) => (
+              {currentActions.map((action) => (
                 <button
                   key={action.id}
                   onClick={() => { setView(action.id); setStatus("idle") }}
@@ -392,6 +433,133 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                   </div>
                   <button onClick={reset} className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-xs font-bold hover:opacity-90 transition-all">
                     Track in Complaint Center →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* === UPLOAD AGRI WASTE VIEW === */}
+          {view === "agri" && (
+            <div className="flex flex-col gap-5">
+              {status === "idle" && (
+                <>
+                  <div className="aspect-square w-full rounded-3xl overflow-hidden bg-black relative">
+                    {cameraError ? (
+                      <div className="w-full h-full flex items-center justify-center p-6">
+                        <p className="text-red-400 text-sm text-center">{cameraError}</p>
+                      </div>
+                    ) : (
+                      <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-40 h-40 border-2 border-emerald-500 rounded-2xl relative">
+                        {[["top-0 left-0", "-translate-x-1 -translate-y-1"], ["top-0 right-0", "translate-x-1 -translate-y-1"], ["bottom-0 left-0", "-translate-x-1 translate-y-1"], ["bottom-0 right-0", "translate-x-1 translate-y-1"]].map(([pos, tr], i) => (
+                          <div key={i} className={cn("absolute w-4 h-4 border-t-2 border-l-2 border-emerald-500", pos)} />
+                        ))}
+                        <div className="absolute top-0 left-0 right-0 h-0.5 bg-emerald-500/60 animate-[scan_2s_ease-in-out_infinite]" />
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={handleCapture} disabled={!!cameraError} className="w-full bg-emerald-500 text-white py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 disabled:opacity-40">
+                    <ScanLine size={18} /> Analyze Agri-Waste
+                  </button>
+                </>
+              )}
+
+              {status === "loading" && (
+                <div className="py-16 flex flex-col items-center gap-4">
+                  <Loader2 className="w-12 h-12 animate-spin text-emerald-500" strokeWidth={2.5} />
+                  <p className="text-sm font-semibold text-muted-foreground animate-pulse">AI identifying crop residue...</p>
+                </div>
+              )}
+
+              {status === "success" && (
+                <div className="py-4 space-y-4 fade-in animate-in">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-xl font-bold text-foreground">Rice Straw (Prali)</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">Identified via AI Vision</p>
+                    </div>
+                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-2 py-0.5 rounded-full text-xs font-bold font-mono">
+                      96% Match
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-muted rounded-2xl border border-border">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">Estimated Value</p>
+                      <p className="text-sm font-bold text-emerald-500 flex items-center gap-1">₹1,200 - ₹1,500 / ton</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-2xl border border-border">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">Best Processing</p>
+                      <p className="text-sm font-bold text-foreground flex items-center gap-1">Biofuel Briquettes</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 w-full mt-4">
+                    <button onClick={reset} className="flex-1 py-3 bg-muted border border-border rounded-2xl text-xs font-bold text-foreground hover:bg-muted/80 transition-all">
+                      Cancel
+                    </button>
+                    <button onClick={() => setView("pickup")} className="flex-1 py-3 bg-blue-500 text-white rounded-2xl text-xs font-bold hover:bg-blue-600 transition-all">
+                      Request Pickup
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* === REQUEST PICKUP VIEW === */}
+          {view === "pickup" && (
+            <div className="flex flex-col gap-5">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-foreground">Select Waste Quantity</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["< 1 Ton", "1 - 5 Tons", "5+ Tons"].map((qty, i) => (
+                      <button key={i} className={cn("py-2.5 rounded-xl border text-xs font-bold transition-all", i === 1 ? "border-blue-500 bg-blue-500/10 text-blue-500" : "border-border bg-card text-muted-foreground hover:border-border/80")}>
+                        {qty}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-foreground">Select Waste Type</label>
+                  <select className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm outline-none text-foreground appearance-none">
+                    <option>Rice Straw (Prali)</option>
+                    <option>Wheat Husk</option>
+                    <option>Sugarcane Bagasse</option>
+                    <option>Mixed Biomass</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-foreground">Pickup Location</label>
+                  <div className="flex items-center gap-3 p-3 bg-muted border border-border rounded-xl">
+                    <MapPin size={16} className="text-blue-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate">Farm ID #PB-4029</p>
+                      <p className="text-[10px] text-muted-foreground truncate">Ludhiana, Punjab</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button onClick={() => setStatus("success")} className="w-full bg-blue-500 text-white py-3 rounded-2xl text-sm font-bold hover:bg-blue-600 transition-all mt-2">
+                Schedule Pickup
+              </button>
+
+              {status === "success" && (
+                <div className="absolute inset-0 bg-card z-20 flex flex-col justify-center items-center p-6 text-center animate-in fade-in zoom-in duration-300">
+                  <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
+                    <Tractor size={32} className="text-blue-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">Pickup Scheduled!</h3>
+                  <p className="text-sm text-muted-foreground mt-2 mb-6">Transport Vehicle #12 has been assigned. Estimated arrival: Tomorrow, 10:00 AM.</p>
+                  <button onClick={reset} className="w-full bg-blue-500 text-white py-3 rounded-2xl text-sm font-bold hover:bg-blue-600 transition-all">
+                    Done
                   </button>
                 </div>
               )}

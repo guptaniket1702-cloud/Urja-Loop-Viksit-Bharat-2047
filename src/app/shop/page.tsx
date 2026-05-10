@@ -12,6 +12,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState as useStateFn } from "react"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/components/shared/LanguageProvider"
+import { useMode } from "@/components/shared/ModeProvider"
+import { RuralShop } from "@/components/rural/RuralShop"
 
 const rawMaterials = [
   { id: 1, name: "PET Plastic Bottles (Baled)", type: "Plastic Waste", weight: "5.2 tons", price: "₹1,200/ton", seller: "Eco-Collect Delhi", quality: "Grade A", verified: true, demand: "High", image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=400" },
@@ -34,7 +36,12 @@ const demandColor = {
 
 export default function Shop() {
   const { t } = useLanguage()
+  const { mode } = useMode()
   const [activeTab, setActiveTab] = useState<"raw" | "processed">("processed")
+
+  if (mode === "rural") {
+    return <RuralShop />
+  }
   const [search, setSearch] = useState("")
 
   const products = activeTab === "raw" ? rawMaterials : processedProducts

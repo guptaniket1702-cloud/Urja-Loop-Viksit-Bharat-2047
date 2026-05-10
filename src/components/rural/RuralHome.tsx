@@ -1,0 +1,164 @@
+"use client"
+
+import { 
+  Tractor, Wheat, Sprout, Wind, MapPin, CheckCircle2,
+  TrendingUp, Calendar, AlertTriangle, Truck, Eye, ArrowRight,
+  Flame, CloudRain, Sun, BrainCircuit, ChevronRight
+} from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import Link from "next/link"
+
+const RURAL_METRICS = [
+  { label: "Agri Waste Submitted", value: "1,240 kg", icon: Wheat, color: "text-amber-500", bg: "bg-amber-500/10" },
+  { label: "Pending Pickups", value: "2", icon: Tractor, color: "text-blue-500", bg: "bg-blue-500/10" },
+  { label: "Nearby Buyers", value: "14", icon: Sprout, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  { label: "CO₂ Impact", value: "-2.4 T", icon: Wind, color: "text-cyan-500", bg: "bg-cyan-500/10" },
+]
+
+const NEARBY_CENTERS = [
+  { id: 1, name: "Kisan Bio-Hub, Sector 4", capacity: "Available", status: "open", dist: "2.4 km", buyer: true },
+  { id: 2, name: "Agri-Waste Processor A", capacity: "Full", status: "closed", dist: "5.1 km", buyer: false },
+  { id: 3, name: "Village Compost Unit", capacity: "Available", status: "open", dist: "1.2 km", buyer: false },
+]
+
+const AI_INSIGHTS = [
+  { icon: AlertTriangle, color: "text-rose-500", bg: "bg-rose-500/10", title: "Stubble Burning Alert", desc: "High PM2.5 risk tonight. Sell crop residue for ₹1200/ton instead of burning.", badge: "Critical" },
+  { icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10", title: "Biomass Demand", desc: "Demand for rice straw has increased by 15% this week in your district.", badge: "Market" },
+  { icon: CloudRain, color: "text-blue-500", bg: "bg-blue-500/10", title: "Seasonal Insight", desc: "Upcoming rain in 2 days. Secure dry biomass storage to preserve market value.", badge: "Weather" },
+]
+
+export function RuralHome() {
+  return (
+    <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* GREETING & WEATHER */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 bg-mesh p-6 rounded-3xl border border-border">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-xs font-bold mb-3 border border-amber-500/20">
+            <Wheat size={14} />
+            <span>Kisan Portal</span>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight">Ram Singh</h1>
+          <p className="text-sm text-muted-foreground mt-1">Ludhiana, Punjab · Farm ID: #PB-4029</p>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-card border border-border shadow-sm">
+          <Sun className="text-amber-500" size={24} />
+          <div>
+            <p className="text-sm font-bold">28°C</p>
+            <p className="text-[10px] text-muted-foreground">Clear Sky</p>
+          </div>
+        </div>
+      </div>
+
+      {/* RURAL METRICS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {RURAL_METRICS.map((m) => (
+          <Card key={m.label} className="card-premium overflow-hidden group">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className={cn("p-2 rounded-xl transition-transform group-hover:scale-110", m.bg)}>
+                  <m.icon size={16} className={m.color} />
+                </div>
+              </div>
+              <p className="text-2xl font-bold">{m.value}</p>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">{m.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* AI INSIGHTS & SEASONAL ALERTS */}
+      <div>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <BrainCircuit size={18} className="text-amber-500" />
+            <h2 className="text-sm font-bold uppercase tracking-wider">Smart Agri-Insights</h2>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {AI_INSIGHTS.map((insight, i) => (
+            <div key={i} className="glass p-4 rounded-2xl group cursor-default transition-all duration-300 hover:bg-muted/50">
+              <div className="flex justify-between items-start mb-3">
+                <div className={cn("p-2 rounded-xl", insight.bg)}>
+                  <insight.icon size={16} className={insight.color} />
+                </div>
+                <Badge variant="outline" className={cn("text-[10px] uppercase font-bold", insight.color, `border-${insight.color.replace('text-', '')}/30`)}>
+                  {insight.badge}
+                </Badge>
+              </div>
+              <h3 className="font-bold text-sm mb-1">{insight.title}</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">{insight.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* NEARBY COLLECTION CENTERS */}
+        <div className="card-premium p-5 flex flex-col h-[320px]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-primary" />
+              <h2 className="text-sm font-bold">Nearby Processing Units</h2>
+            </div>
+            <Link href="/map" className="text-xs font-bold text-primary hover:underline flex items-center">
+              View Map <ChevronRight size={14} />
+            </Link>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3">
+            {NEARBY_CENTERS.map((center) => (
+              <div key={center.id} className="p-3 rounded-2xl border border-border bg-card/50 transition-colors hover:bg-muted/50">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-sm font-bold">{center.name}</h3>
+                  <Badge variant="secondary" className={cn(
+                    "text-[10px] uppercase font-bold",
+                    center.status === "open" ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+                  )}>
+                    {center.status === "open" ? "Open" : "Closed"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1"><Tractor size={12} /> {center.dist}</span>
+                    <span className="flex items-center gap-1">
+                      {center.buyer ? <span className="text-emerald-500 flex items-center gap-1"><CheckCircle2 size={12} /> Buyer</span> : <span>Processing</span>}
+                    </span>
+                  </div>
+                  <span className={center.capacity === "Available" ? "text-emerald-500" : "text-rose-500"}>
+                    {center.capacity}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RECENT PICKUP REQUESTS */}
+        <div className="card-premium p-5 flex flex-col h-[320px]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Tractor size={16} className="text-blue-500" />
+              <h2 className="text-sm font-bold">Active Pickup Requests</h2>
+            </div>
+            <Link href="/complaints" className="text-xs font-bold text-primary hover:underline flex items-center">
+              History <ChevronRight size={14} />
+            </Link>
+          </div>
+
+          <div className="flex-1 flex flex-col justify-center items-center text-center p-6 border border-dashed border-border rounded-2xl bg-muted/30">
+            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-3">
+              <Tractor size={24} className="text-blue-500" />
+            </div>
+            <h3 className="text-sm font-bold mb-1">No Active Pickups</h3>
+            <p className="text-xs text-muted-foreground mb-4">Request a transport vehicle to collect your agri-waste directly from your farm.</p>
+            <button className="px-5 py-2.5 rounded-xl bg-blue-500 text-white text-xs font-bold flex items-center gap-2 hover:bg-blue-600 transition-colors">
+              Request Pickup <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

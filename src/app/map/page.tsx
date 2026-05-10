@@ -8,6 +8,8 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useMode } from "@/components/shared/ModeProvider"
+import { RuralMap } from "@/components/rural/RuralMap"
 
 const locations = [
   { id: 1, type: "bin", lat: "38%", lng: "28%", fill: 18, status: "low", address: "Sector 14 Main Gate", lastCleaned: "2h ago", nextPickup: "Tomorrow, 6 AM", capacity: "120L" },
@@ -24,10 +26,15 @@ const statusColor = {
 }
 
 export default function MapPage() {
+  const { mode } = useMode()
   const [selectedEntity, setSelectedEntity] = useState<typeof locations[0]>(locations[2])
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [showTransparency, setShowTransparency] = useState(true)
   const [isSheetExpanded, setIsSheetExpanded] = useState(false)
+
+  if (mode === "rural") {
+    return <RuralMap />
+  }
 
   return (
     <div className="h-[calc(100vh-0rem)] w-full relative overflow-hidden bg-background animate-in fade-in duration-700">

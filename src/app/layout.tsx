@@ -4,6 +4,7 @@ import "./globals.css"
 import { LayoutWrapper } from "@/components/shared/LayoutWrapper"
 import { ThemeProvider } from "@/components/shared/ThemeProvider"
 import { LanguageProvider } from "@/components/shared/LanguageProvider"
+import { ModeProvider } from "@/components/shared/ModeProvider"
 
 const outfit = Outfit({ 
   subsets: ["latin"],
@@ -37,9 +38,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
-            <LayoutWrapper>
-              {children}
-            </LayoutWrapper>
+            <ModeProvider>
+              <LayoutWrapper>
+                {children}
+              </LayoutWrapper>
+            </ModeProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

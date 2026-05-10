@@ -11,6 +11,8 @@ import { ThemeToggle } from "@/components/shared/ThemeToggle"
 import { LanguageToggle } from "@/components/shared/LanguageToggle"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/components/shared/LanguageProvider"
+import { useMode } from "@/components/shared/ModeProvider"
+import { RuralProfile } from "@/components/rural/RuralProfile"
 import { useState } from "react"
 import Link from "next/link"
 
@@ -28,10 +30,15 @@ const ecoCreditHistory = [
 
 export default function Profile() {
   const { t } = useLanguage()
+  const { mode } = useMode()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section)
+  }
+
+  if (mode === "rural") {
+    return <RuralProfile />
   }
 
   return (

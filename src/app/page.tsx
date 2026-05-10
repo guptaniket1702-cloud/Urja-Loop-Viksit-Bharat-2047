@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { useLanguage } from "@/components/shared/LanguageProvider"
+import { useMode } from "@/components/shared/ModeProvider"
+import { RuralHome } from "@/components/rural/RuralHome"
 import { useState, useEffect } from "react"
 
 const nearbyBins = [
@@ -33,6 +35,7 @@ const recentActivity = [
 
 export default function Home() {
   const { t } = useLanguage()
+  const { mode } = useMode()
   const [currentTime, setCurrentTime] = useState("")
   const [greeting, setGreeting] = useState("")
 
@@ -44,6 +47,10 @@ export default function Home() {
     else setGreeting("Good Evening")
     setCurrentTime(now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }))
   }, [])
+
+  if (mode === "rural") {
+    return <RuralHome />
+  }
 
   return (
     <div className="p-4 pb-32 lg:p-8 space-y-8 animate-in fade-in duration-700 min-h-screen">
