@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { ScanModal } from "./ScanModal"
 import { Sidebar } from "./Sidebar"
 import { BottomNav } from "./BottomNav"
+import { ProfileSettingsMenu } from "./ProfileSettingsMenu"
 import { Loader2 } from "lucide-react"
 const AUTH_ROUTES = ["/", "/splash", "/onboarding", "/login", "/verify-otp", "/setup-profile", "/permissions"]
 
@@ -63,6 +64,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
             </div>
             <span className="text-sm font-bold tracking-tight">Urja<span className="text-primary">Loop</span></span>
           </div>
+          <ProfileSettingsMenu />
         </header>
 
         <div className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">

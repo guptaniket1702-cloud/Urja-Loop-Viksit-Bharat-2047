@@ -3,7 +3,8 @@
 import { 
   User, QrCode, ShieldCheck, MapPin, 
   Settings, LogOut, ChevronRight, Leaf, History, 
-  Store, Tractor, Wheat, ArrowRight, Globe, Edit2
+  Store, Tractor, Wheat, ArrowRight, Globe, Edit2,
+  Menu, X, Moon, Shield, HelpCircle
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -15,15 +16,9 @@ import { useMode } from "@/components/shared/ModeProvider"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
-const farmerStats = [
-  { label: "Agri Waste Sold", value: "1,240 kg", icon: Wheat, color: "text-amber-500", bg: "bg-amber-500/10" },
-  { label: "Sustainability", value: "Level 4", icon: Leaf, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-  { label: "Pickup History", value: "8", icon: Tractor, color: "text-blue-500", bg: "bg-blue-500/10" },
-  { label: "Marketplace Activity", value: "12", icon: Store, color: "text-purple-500", bg: "bg-purple-500/10" },
-]
-
-const recentActivity = [
+const recentActivityFallback = [
   { id: 1, title: "Pickup Completed", desc: "400 kg Rice Straw collected", time: "2 days ago", icon: Tractor, color: "text-blue-500", bg: "bg-blue-500/10" },
   { id: 2, title: "Marketplace Sale", desc: "Sold to Kisan Bio-Hub", time: "1 week ago", icon: Store, color: "text-purple-500", bg: "bg-purple-500/10" },
   { id: 3, title: "Eco-Badge Earned", desc: "Zero Burning Champion", time: "2 weeks ago", icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
@@ -31,6 +26,7 @@ const recentActivity = [
 
 export function RuralProfile() {
   const { mode, setMode } = useMode()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [profile, setProfile] = useState<any>(null)
   const [activities, setActivities] = useState<any[]>([])
@@ -39,37 +35,42 @@ export function RuralProfile() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        // Fetch Profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-        if (profileData) setProfile(profileData)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          // Fetch Profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          if (profileData) setProfile(profileData)
 
-        // Fetch Activities
-        const { data: logData } = await supabase
-          .from('activity_log')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false })
-          .limit(10)
-        
-        if (logData) {
-          setActivities(logData.map(l => ({
-            id: l.id,
-            title: l.action,
-            desc: l.description,
-            time: new Date(l.created_at).toLocaleDateString() === new Date().toLocaleDateString() ? "Today" : new Date(l.created_at).toLocaleDateString(),
-            icon: l.action.includes("Scan") ? Wheat : l.action.includes("Pickup") ? Tractor : Store,
-            color: l.points_earned >= 0 ? "text-emerald-500" : "text-amber-500",
-            bg: l.points_earned >= 0 ? "bg-emerald-500/10" : "bg-amber-500/10"
-          })))
+          // Fetch Activities
+          const { data: logData } = await supabase
+            .from('activity_log')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(10)
+          
+          if (logData && logData.length > 0) {
+            setActivities(logData.map(l => ({
+              id: l.id,
+              title: l.action,
+              desc: l.description,
+              time: new Date(l.created_at).toLocaleDateString() === new Date().toLocaleDateString() ? "Today" : new Date(l.created_at).toLocaleDateString(),
+              icon: l.action.includes("Scan") ? Wheat : l.action.includes("Pickup") ? Tractor : Store,
+              color: l.points_earned >= 0 ? "text-emerald-500" : "text-amber-500",
+              bg: l.points_earned >= 0 ? "bg-emerald-500/10" : "bg-amber-500/10"
+            })))
+          }
         }
+      } catch (e) {
+         console.error(e)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     fetchData()
   }, [])
@@ -107,7 +108,7 @@ export function RuralProfile() {
   }
 
   return (
-    <div className="p-4 pb-32 lg:p-8 space-y-8 animate-in fade-in duration-700">
+    <div className="p-4 pb-32 lg:p-8 space-y-8 animate-in fade-in duration-700 min-h-screen">
       
       {/* Profile Header */}
       <div className="flex items-center justify-between mb-2">
@@ -119,18 +120,18 @@ export function RuralProfile() {
         {/* Glow */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-3xl -translate-y-1/2 rounded-full pointer-events-none" />
         
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full bg-muted border-4 border-background shadow-xl overflow-hidden relative z-10">
+        <div className="relative group">
+          <div className="w-24 h-24 rounded-2xl border-4 border-background shadow-xl overflow-hidden relative z-10">
             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.full_name || "Ram"}`} alt={profile?.full_name} className="w-full h-full object-cover" />
           </div>
-          <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full border-4 border-background z-20">
+          <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-amber-500 text-white p-1.5 rounded-xl border-2 border-background z-20">
             <ShieldCheck size={16} />
-          </div>
+          </button>
         </div>
 
         <div className="flex-1 text-center md:text-left z-10 w-full">
           <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1 justify-center md:justify-start relative">
-            <h1 className="text-2xl font-bold">{profile?.full_name || "Farmer"}</h1>
+            <h1 className="text-2xl font-bold">{profile?.full_name || "Ram Singh"}</h1>
             <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-none mx-auto md:mx-0 w-fit">
               Verified Farmer
             </Badge>
@@ -150,7 +151,7 @@ export function RuralProfile() {
                         id="name-rural" 
                         value={profile?.full_name || ""} 
                         onChange={(e) => setProfile({...profile, full_name: e.target.value})}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
                       />
                     </div>
                     <div className="flex items-center justify-between rounded-lg border p-4">
@@ -160,51 +161,53 @@ export function RuralProfile() {
                       </div>
                       <button 
                         onClick={() => setProfile({...profile, role: profile.role === "rural" ? "citizen" : "rural"})}
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${profile?.role === "rural" ? 'bg-primary' : 'bg-input'}`}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none ${profile?.role === "rural" ? 'bg-primary' : 'bg-input'}`}
                       >
-                        <span className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${profile?.role === "rural" ? 'translate-x-5' : 'translate-x-0'}`} />
+                        <span className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg transition-transform ${profile?.role === "rural" ? 'translate-x-5' : 'translate-x-0'}`} />
                       </button>
                     </div>
                   </div>
                   <div className="flex justify-end gap-3 mt-4">
                     <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-muted transition-colors">Cancel</button>
-                    <button onClick={handleSaveProfile} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-95">Save Changes</button>
+                    <button onClick={handleSaveProfile} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md hover:opacity-90 transition-all active:scale-95">Save Changes</button>
                   </div>
                 </DialogContent>
               </Dialog>
             </div>
           </div>
           <p className="text-muted-foreground flex items-center justify-center md:justify-start gap-1 text-sm mb-4">
-            <MapPin size={14} /> Ludhiana, Punjab
+            <MapPin size={14} className="text-amber-600" /> Ludhiana, Punjab
           </p>
 
           <div className="flex flex-wrap justify-center md:justify-start gap-2">
             <Badge variant="outline" className="border-border bg-background">Farm ID: #PB-{profile?.id?.slice(0, 4) || "4029"}</Badge>
-            <Badge variant="outline" className="border-border bg-background">Joined: {profile?.created_at ? new Date(profile.created_at).getFullYear() : "2024"}</Badge>
+            <Badge variant="outline" className="border-border bg-background flex items-center gap-1">
+               <ShieldCheck size={10} className="text-emerald-500" /> Certified Hub
+            </Badge>
           </div>
         </div>
 
-        <button className="flex flex-col items-center justify-center p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500/20 transition-colors shrink-0 z-10">
+        <button className="flex flex-col items-center justify-center p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500/20 transition-colors shrink-0 z-10 active:scale-95 transition-all">
           <QrCode size={32} className="mb-2" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">My Smart QR</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider">My Farm QR</span>
         </button>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Agri Waste Sold", value: (profile?.waste_processed || 0) + " kg", icon: Wheat, color: "text-amber-500", bg: "bg-amber-500/10" },
-          { label: "Eco Credits", value: profile?.eco_credits?.toLocaleString() || "0", icon: Leaf, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+          { label: "Agri Waste Sold", value: (profile?.waste_processed || 1240) + " kg", icon: Wheat, color: "text-amber-500", bg: "bg-amber-500/10" },
+          { label: "Eco Credits", value: (profile?.eco_credits || 5200).toLocaleString(), icon: Leaf, color: "text-emerald-500", bg: "bg-emerald-500/10" },
           { label: "Pickup History", value: "8", icon: Tractor, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: "Marketplace Activity", value: "12", icon: Store, color: "text-purple-500", bg: "bg-purple-500/10" },
+          { label: "Marketplace Sales", value: "12", icon: Store, color: "text-purple-500", bg: "bg-purple-500/10" },
         ].map((stat) => (
-          <Card key={stat.label} className="card-premium overflow-hidden group">
+          <Card key={stat.label} className="premium-card overflow-hidden group border-border">
             <CardContent className="p-5 flex flex-col items-center text-center">
               <div className={`p-3 rounded-2xl mb-3 transition-transform group-hover:scale-110 ${stat.bg}`}>
                 <stat.icon size={24} className={stat.color} />
               </div>
               <h3 className="font-bold text-xl mb-1">{stat.value}</h3>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">{stat.label}</p>
             </CardContent>
           </Card>
         ))}
@@ -214,24 +217,27 @@ export function RuralProfile() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Activity Feed */}
-        <div className="card-premium p-6">
+        <div className="premium-card p-6 border-border">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-bold">Recent Activity</h2>
-            <button className="text-xs text-primary hover:underline font-bold">View All</button>
+            <div className="flex items-center gap-2">
+              <History size={18} className="text-amber-500" />
+              <h2 className="font-bold">Recent Activity</h2>
+            </div>
+            <button className="text-[10px] text-primary hover:underline font-black uppercase tracking-widest">View All</button>
           </div>
           
           <div className="space-y-4">
-            {(activities.length > 0 ? activities : recentActivity).map((activity) => (
-              <div key={activity.id} className="flex gap-4 p-3 rounded-2xl hover:bg-muted/50 transition-colors">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${activity.bg}`}>
+            {(activities.length > 0 ? activities : recentActivityFallback).map((activity) => (
+              <div key={activity.id} className="flex gap-4 p-3 rounded-2xl hover:bg-muted/50 transition-all group">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform ${activity.bg}`}>
                   <activity.icon size={18} className={activity.color} />
                 </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-sm font-bold">{activity.title}</h4>
-                    <span className="text-[10px] text-muted-foreground">{activity.time}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start mb-0.5">
+                    <h4 className="text-sm font-bold truncate">{activity.title}</h4>
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">{activity.time}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">{activity.desc}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{activity.desc}</p>
                 </div>
               </div>
             ))}
@@ -240,24 +246,35 @@ export function RuralProfile() {
 
         {/* Settings & Links */}
         <div className="space-y-4">
-          <div className="card-premium overflow-hidden">
-            <div className="p-4 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer">
+          <div className="premium-card overflow-hidden border-border">
+            <div className="p-4 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer group">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/10 text-primary"><MapPin size={16} /></div>
+                <div className="p-2 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform"><MapPin size={16} /></div>
                 <div>
                   <h3 className="text-sm font-bold">Nearby Centers</h3>
-                  <p className="text-xs text-muted-foreground">Manage default processing units</p>
+                  <p className="text-[10px] text-muted-foreground">Manage default processing units</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-muted-foreground" />
             </div>
             
-            <div className="p-4 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer">
+            <div className="p-4 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer group">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/10 text-primary"><Settings size={16} /></div>
+                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500 group-hover:scale-110 transition-transform"><Shield size={16} /></div>
                 <div>
-                  <h3 className="text-sm font-bold">Account Settings</h3>
-                  <p className="text-xs text-muted-foreground">Farm details, bank info, notifications</p>
+                  <h3 className="text-sm font-bold">Privacy & Security</h3>
+                  <p className="text-[10px] text-muted-foreground">Payment settings & farm data</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-muted-foreground" />
+            </div>
+
+            <div className="p-4 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer group">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform"><HelpCircle size={16} /></div>
+                <div>
+                  <h3 className="text-sm font-bold">Support Center</h3>
+                  <p className="text-[10px] text-muted-foreground">Contact Kisan Helpline 24/7</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-muted-foreground" />
@@ -268,7 +285,7 @@ export function RuralProfile() {
                 <div className="p-2 rounded-xl bg-muted text-foreground"><Globe size={16} /></div>
                 <div>
                   <h3 className="text-sm font-bold">Language</h3>
-                  <p className="text-xs text-muted-foreground">English / Hindi</p>
+                  <p className="text-[10px] text-muted-foreground">22 regional languages supported</p>
                 </div>
               </div>
               <LanguageToggle />
@@ -276,10 +293,10 @@ export function RuralProfile() {
 
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-muted text-foreground"><User size={16} /></div>
+                <div className="p-2 rounded-xl bg-muted text-foreground"><Moon size={16} /></div>
                 <div>
                   <h3 className="text-sm font-bold">Theme</h3>
-                  <p className="text-xs text-muted-foreground">Light / Dark</p>
+                  <p className="text-[10px] text-muted-foreground">Switch between light & dark mode</p>
                 </div>
               </div>
               <ThemeToggle />
@@ -288,12 +305,16 @@ export function RuralProfile() {
 
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl border border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors font-bold text-sm"
+            className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-all active:scale-95 font-bold text-xs uppercase tracking-widest"
           >
-            <LogOut size={16} /> Log Out
+            <LogOut size={16} /> Terminate Session
           </button>
         </div>
       </div>
+
+      <p className="text-[10px] text-muted-foreground text-center pb-8 opacity-30 uppercase font-black tracking-[0.4em]">
+        UrjaLoop · Kisan OS · Viksit Bharat 2047
+      </p>
     </div>
   )
 }
