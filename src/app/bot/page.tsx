@@ -34,7 +34,7 @@ interface Message {
 export default function UrjaBot() {
   const { t } = useLanguage()
   const [messages, setMessages] = useState<Message[]>([
-    { role: "bot", content: "Hi! I'm **Urja AI**, your smart sustainability assistant. I can help with waste segregation guidance, complaint support, finding nearby facilities, and more. What would you like to know? 🌱", timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) }
+    { role: "bot", content: t("bot_greeting"), timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) }
   ])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
@@ -169,7 +169,7 @@ export default function UrjaBot() {
       {/* Input */}
       <div className="p-4 border-t border-border bg-card">
         <div className="flex gap-3">
-          <button className="w-11 h-11 bg-muted border border-border rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-all flex-shrink-0">
+          <button aria-label="Voice input" className="w-11 h-11 bg-muted border border-border rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-all flex-shrink-0 focus-ring">
             <Mic size={18} />
           </button>
           <div className="flex-1 relative">
@@ -178,12 +178,13 @@ export default function UrjaBot() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder={t("bot_placeholder")}
-              className="w-full px-4 py-3 bg-muted border border-border rounded-2xl text-sm text-foreground outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground/60"
+              className="w-full px-4 py-3 bg-muted border border-border rounded-2xl text-sm text-foreground focus-ring focus:border-primary/50 transition-all placeholder:text-muted-foreground/60"
             />
           </div>
           <button
             onClick={() => handleSend()}
-            className="w-11 h-11 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-sm hover:opacity-90 transition-all active:scale-95 flex-shrink-0"
+            aria-label="Send message"
+            className="w-11 h-11 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-sm hover:opacity-90 transition-all active:scale-95 flex-shrink-0 focus-ring"
           >
             <Send size={18} />
           </button>

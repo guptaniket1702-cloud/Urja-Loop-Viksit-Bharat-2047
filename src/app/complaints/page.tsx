@@ -4,11 +4,14 @@ import { useState } from "react"
 import { 
   AlertTriangle, MapPin, Camera, CheckCircle2, Clock,
   Upload, ShieldCheck, AlertCircle, ChevronRight,
-  Filter, MessageSquare, Image, Target, Zap, Phone
+  Filter, MessageSquare, Image as ImageIcon, Target, Zap, Phone
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import NextImage from "next/image"
+import { useToast } from "@/components/shared/Toast"
+import { useLanguage } from "@/components/shared/LanguageProvider"
 
 const STATUS_STEPS = ["Submitted", "Under Review", "Assigned", "In Progress", "Resolved"]
 
@@ -40,6 +43,9 @@ export default function Complaints() {
   const [activeTab, setActiveTab] = useState<"new" | "history">("history")
   const [selectedComplaint, setSelectedComplaint] = useState(myComplaints[0])
   const [formStep, setFormStep] = useState(0)
+  const [selectedSeverity, setSelectedSeverity] = useState<string>("Medium")
+  const { addToast } = useToast()
+  const { t } = useLanguage()
 
   return (
     <div className="p-4 pb-32 lg:p-8 space-y-6 animate-in fade-in duration-700 min-h-screen">
@@ -48,8 +54,8 @@ export default function Complaints() {
       <div className="pt-2 space-y-1">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Complaint Center</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Transparent · AI-Validated · Citizen-Powered</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("complaints_title")}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("complaints_subtitle")}</p>
           </div>
           <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 rounded-2xl">
             <ShieldCheck size={14} className="text-emerald-500" />
@@ -61,9 +67,9 @@ export default function Complaints() {
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Open", value: "2", color: "text-amber-500", bg: "bg-amber-500/10" },
-          { label: "In Progress", value: "1", color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: "Resolved", value: "12", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+          { label: t("complaints_stats_open"), value: "2", color: "text-amber-500", bg: "bg-amber-500/10" },
+          { label: t("complaints_stats_progress"), value: "1", color: "text-blue-500", bg: "bg-blue-500/10" },
+          { label: t("complaints_stats_resolved"), value: "12", color: "text-emerald-500", bg: "bg-emerald-500/10" },
         ].map((s) => (
           <div key={s.label} className={cn("p-3 rounded-2xl", s.bg)}>
             <p className={cn("text-xl font-bold", s.color)}>{s.value}</p>
@@ -78,13 +84,13 @@ export default function Complaints() {
           className={cn("flex-1 py-2 rounded-xl text-xs font-bold transition-all", 
             activeTab === "new" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           )}>
-          + File Report
+          {t("complaints_tab_new")}
         </button>
         <button onClick={() => setActiveTab("history")}
           className={cn("flex-1 py-2 rounded-xl text-xs font-bold transition-all",
             activeTab === "history" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           )}>
-          My Complaints
+          {t("complaints_tab_history")}
         </button>
       </div>
 
@@ -92,36 +98,37 @@ export default function Complaints() {
         /* --- FILE NEW COMPLAINT FORM --- */
         <Card className="border border-border bg-card shadow-sm rounded-3xl">
           <CardContent className="p-6 space-y-5">
-            <h2 className="text-base font-bold text-foreground">File a New Complaint</h2>
+            <h2 className="text-base font-bold text-foreground">{t("complaints_form_title")}</h2>
             
             {/* Photo Upload */}
             <div className="w-full aspect-video border-2 border-dashed border-border rounded-2xl bg-muted/40 flex flex-col items-center justify-center text-muted-foreground hover:border-primary/50 hover:bg-muted/60 transition-all cursor-pointer group">
               <div className="w-12 h-12 bg-card rounded-2xl border border-border flex items-center justify-center mb-3 group-hover:border-primary/40 transition-all">
                 <Camera size={20} className="text-primary" />
               </div>
-              <p className="text-sm font-semibold text-foreground">Capture or Upload Photo</p>
-              <p className="text-xs text-muted-foreground mt-1">Evidence helps faster resolution</p>
+              <p className="text-sm font-semibold text-foreground">{t("complaints_photo_title")}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("complaints_photo_desc")}</p>
             </div>
 
             {/* Location */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Location</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_location")}</label>
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center gap-3 p-3 bg-muted/40 border border-border rounded-2xl">
                   <MapPin size={16} className="text-primary flex-shrink-0" />
                   <input type="text" defaultValue="Sector 14 · New Delhi"
-                    className="bg-transparent border-none outline-none text-sm text-foreground flex-1" />
+                    aria-label="Complaint location"
+                    className="bg-transparent border-none outline-none text-sm text-foreground flex-1 focus-ring" />
                 </div>
                 <button className="w-12 h-12 bg-muted/40 border border-border rounded-2xl flex items-center justify-center text-primary hover:bg-primary/10 transition-all">
                   <Target size={18} />
                 </button>
               </div>
-              <p className="text-[10px] text-muted-foreground px-1">📍 GPS location captured automatically</p>
+              <p className="text-[10px] text-muted-foreground px-1">{t("complaints_gps_note")}</p>
             </div>
 
             {/* Issue Type */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Issue Type</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_type")}</label>
               <select className="w-full p-3 bg-muted/40 border border-border rounded-2xl text-sm text-foreground outline-none focus:border-primary/50 transition-all">
                 <option>Overflowing Bin</option>
                 <option>Illegal / Open Dumping</option>
@@ -133,10 +140,13 @@ export default function Complaints() {
 
             {/* Severity */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Severity</label>
-              <div className="flex gap-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_severity")}</label>
+              <div className="flex gap-2" role="radiogroup" aria-label="Complaint severity">
                 {["Low", "Medium", "High"].map((level) => (
-                  <button key={level} className={cn("flex-1 py-2 rounded-xl text-xs font-bold border transition-all",
+                  <button key={level} role="radio" aria-checked={selectedSeverity === level} onClick={() => setSelectedSeverity(level)} className={cn("flex-1 py-2 rounded-xl text-xs font-bold border transition-all",
+                    selectedSeverity === level && level === "High" ? "border-red-500 bg-red-500/20 text-red-600 dark:text-red-400 ring-2 ring-red-500/30" :
+                    selectedSeverity === level && level === "Medium" ? "border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-2 ring-amber-500/30" :
+                    selectedSeverity === level && level === "Low" ? "border-emerald-500 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/30" :
                     level === "High" ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400" :
                     level === "Medium" ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400" :
                     "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -149,11 +159,12 @@ export default function Complaints() {
 
             {/* Description */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_desc")}</label>
               <textarea
-                placeholder="Describe the issue clearly..."
+                placeholder={t("complaints_desc_placeholder")}
                 rows={3}
-                className="w-full p-3 bg-muted/40 border border-border rounded-2xl text-sm text-foreground outline-none focus:border-primary/50 transition-all resize-none placeholder:text-muted-foreground/60"
+                aria-label="Complaint description"
+                className="w-full p-3 bg-muted/40 border border-border rounded-2xl text-sm text-foreground focus-ring focus:border-primary/50 transition-all resize-none placeholder:text-muted-foreground/60"
               />
             </div>
 
@@ -161,12 +172,12 @@ export default function Complaints() {
             <div className="flex items-start gap-3 p-3 bg-primary/5 border border-primary/20 rounded-2xl">
               <ShieldCheck size={16} className="text-primary flex-shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">AI-Assisted Validation</span> — Your complaint will be reviewed by our AI system for duplicate detection and severity confirmation before assignment.
+                <span className="font-semibold text-foreground">{t("complaints_ai_note_title")}</span> {t("complaints_ai_note_desc")}
               </p>
             </div>
 
-            <button className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-sm font-bold tracking-wide hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2">
-              <Upload size={16} /> Submit Complaint
+            <button onClick={() => { addToast("Complaint submitted successfully! You'll receive updates via notification.", "success"); setActiveTab("history") }} className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-sm font-bold tracking-wide hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 focus-ring">
+              <Upload size={16} /> {t("complaints_submit")}
             </button>
           </CardContent>
         </Card>
@@ -182,12 +193,12 @@ export default function Complaints() {
               <CardContent className="p-0">
                 <div className="flex">
                   {/* Image */}
-                  <div className="w-24 h-full min-h-[120px] flex-shrink-0 rounded-l-3xl overflow-hidden">
+                  <div className="relative w-24 h-full min-h-[120px] flex-shrink-0 rounded-l-3xl overflow-hidden">
                     {complaint.image ? (
-                      <img src={complaint.image} alt="" className="w-full h-full object-cover" />
+                      <NextImage src={complaint.image} alt={complaint.type} fill className="object-cover" sizes="96px" />
                     ) : (
                       <div className="w-full h-full bg-muted flex items-center justify-center">
-                        <Image size={20} className="text-muted-foreground/40" />
+                        <ImageIcon size={20} className="text-muted-foreground/40" />
                       </div>
                     )}
                   </div>

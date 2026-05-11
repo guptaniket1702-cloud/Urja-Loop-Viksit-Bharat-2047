@@ -2,16 +2,21 @@
 
 import { 
   AlertTriangle, Clock, MapPin, CheckCircle2, Bell,
-  Navigation, Zap, TrendingUp, ShieldCheck, Wind,
-  Droplets, Eye, ArrowRight, Users, Recycle,
+  Zap, TrendingUp, ShieldCheck, Wind,
+  Droplets, Eye, Recycle,
   BrainCircuit, Truck, ChevronRight, Leaf
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
-import { useLanguage } from "@/components/shared/LanguageProvider"
+import Image from "next/image"
 import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import { useUser } from "@/components/shared/UserContext"
+import { useToast } from "@/components/shared/Toast"
+import { useLanguage } from "@/components/shared/LanguageProvider"
+import { staggerContainer, staggerItem } from "@/components/shared/PageTransition"
 
 const nearbyBins = [
   { id: 1, location: "Main Gate, Sector 14", fill: 18, status: "low", lastCleaned: "2h ago", next: "6:00 AM" },
@@ -19,29 +24,31 @@ const nearbyBins = [
   { id: 3, location: "Market Complex", fill: 91, status: "high", lastCleaned: "12h ago", next: "ASAP" },
 ]
 
-const aiInsights = [
-  { icon: AlertTriangle, color: "text-amber-500", bg: "bg-amber-500/10", title: "Overflow Risk", desc: "Bin at Market Complex likely to overflow in ~2 hours. Collection requested.", badge: "Alert" },
-  { icon: Truck, color: "text-blue-500", bg: "bg-blue-500/10", title: "Collection Vehicle Nearby", desc: "Truck #402 is 1.2km away, estimated arrival in 18 minutes.", badge: "Live" },
-  { icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10", title: "Weekly Trend", desc: "Your area recycling rate improved by 12% this week. Keep it up!", badge: "Insight" },
+const getAiInsights = (t: any) => [
+  { icon: AlertTriangle, color: "text-amber-500", bg: "bg-amber-500/10", title: t("dashboard_ai_alert_title"), desc: t("dashboard_ai_alert_desc"), badge: "Alert" },
+  { icon: Truck, color: "text-blue-500", bg: "bg-blue-500/10", title: t("dashboard_ai_truck_title"), desc: t("dashboard_ai_truck_desc"), badge: "Live" },
+  { icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10", title: t("dashboard_ai_trend_title"), desc: t("dashboard_ai_trend_desc"), badge: "Insight" },
 ]
 
-const recentActivity = [
-  { id: 1, item: "Street Sweeping Completed", location: "Sector 14 Main Road", time: "Today, 6:00 AM", icon: CheckCircle2, status: "success", type: "Cleaned" },
-  { id: 2, item: "Overflowing Bin Reported", location: "Market Area", time: "2 hours ago", icon: AlertTriangle, status: "pending", type: "Reported" },
-  { id: 3, item: "Illegal Dumping Resolved", location: "Behind Metro Station", time: "Yesterday", icon: CheckCircle2, status: "success", type: "Resolved" },
+const getRecentActivity = (t: any) => [
+  { id: 1, item: t("dashboard_act_1_title"), location: t("dashboard_act_1_loc"), time: t("dashboard_act_1_time"), icon: CheckCircle2, status: "success", type: t("dashboard_act_1_type") },
+  { id: 2, item: t("dashboard_act_2_title"), location: t("dashboard_act_2_loc"), time: t("dashboard_act_2_time"), icon: AlertTriangle, status: "pending", type: t("dashboard_act_2_type") },
+  { id: 3, item: t("dashboard_act_3_title"), location: t("dashboard_act_3_loc"), time: t("dashboard_act_3_time"), icon: CheckCircle2, status: "success", type: t("dashboard_act_3_type") },
 ]
 
 export default function Home() {
-  const { t } = useLanguage()
   const [currentTime, setCurrentTime] = useState("")
   const [greeting, setGreeting] = useState("")
+  const user = useUser()
+  const { addToast } = useToast()
+  const { t } = useLanguage()
 
   useEffect(() => {
     const now = new Date()
     const hour = now.getHours()
-    if (hour < 12) setGreeting("Good Morning")
-    else if (hour < 17) setGreeting("Good Afternoon")
-    else setGreeting("Good Evening")
+    if (hour < 12) setGreeting(t("greeting_morning"))
+    else if (hour < 17) setGreeting(t("greeting_afternoon"))
+    else setGreeting(t("greeting_evening"))
     setCurrentTime(now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }))
   }, [])
 
@@ -53,20 +60,20 @@ export default function Home() {
         <div className="space-y-1">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{currentTime}</p>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {greeting}, <span className="text-primary">Alex</span> 👋
+            {greeting}, <span className="text-primary">{user.firstName}</span> 👋
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs text-muted-foreground font-medium">Sector 14 · New Delhi</span>
+            <span className="text-xs text-muted-foreground font-medium">{user.location}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="w-10 h-10 bg-card rounded-2xl border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-all shadow-sm relative">
+          <button aria-label="Notifications" className="w-10 h-10 bg-card rounded-2xl border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-all shadow-sm relative focus-ring">
             <Bell size={18} />
             <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full" />
           </button>
-          <div className="w-10 h-10 rounded-2xl border-2 border-primary/30 overflow-hidden shadow-sm">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="Avatar" className="w-full h-full object-cover" />
+          <div className="w-10 h-10 rounded-2xl border-2 border-primary/30 overflow-hidden shadow-sm relative">
+            <Image src={user.avatarUrl} alt="User avatar" fill className="object-cover" />
           </div>
         </div>
       </div>
@@ -81,19 +88,19 @@ export default function Home() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Live Status · Sector 14</span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t("dashboard_status_label")} · {user.location}</span>
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">Area Cleanliness</h2>
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("dashboard_cleanliness_title")}</h2>
               </div>
               <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-xl font-semibold text-xs">
-                ✓ Good Condition
+                {t("dashboard_good_condition")}
               </Badge>
             </div>
             
             {/* Cleanliness Score Visual */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground font-medium">Cleanliness Index</span>
+                <span className="text-xs text-muted-foreground font-medium">{t("dashboard_index_label")}</span>
                 <span className="text-sm font-bold text-foreground">98.4 / 100</span>
               </div>
               <div className="h-2.5 bg-muted rounded-full overflow-hidden">
@@ -103,9 +110,9 @@ export default function Home() {
 
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: "Next Pickup", value: "6:00 AM", icon: Clock, color: "text-blue-500" },
-                { label: "Bins Nearby", value: "3 Active", icon: Recycle, color: "text-emerald-500" },
-                { label: "Complaints", value: "1 Open", icon: AlertTriangle, color: "text-amber-500" },
+                { label: t("dashboard_next_label"), value: "6:00 AM", icon: Clock, color: "text-blue-500" },
+                { label: t("dashboard_facilities_title"), value: "3 Active", icon: Recycle, color: "text-emerald-500" },
+                { label: t("nav_complaints"), value: "1 Open", icon: AlertTriangle, color: "text-amber-500" },
               ].map((stat) => (
                 <div key={stat.label} className="p-3 bg-muted/40 rounded-2xl">
                   <stat.icon size={14} className={cn("mb-1.5", stat.color)} />
@@ -123,22 +130,22 @@ export default function Home() {
           <Card className="border border-border bg-card shadow-sm rounded-3xl">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Weather · Delhi</span>
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("dashboard_weather_title")}</span>
                 <Eye size={14} className="text-muted-foreground" />
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-4xl">☀️</span>
                 <div>
                   <p className="text-2xl font-bold text-foreground">32°C</p>
-                  <p className="text-xs text-muted-foreground">Sunny, Clear Skies</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard_sunny")}</p>
                 </div>
               </div>
               <div className="flex gap-3 mt-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Droplets size={12} className="text-blue-500" />52% Humidity
+                  <Droplets size={12} className="text-blue-500" />{t("dashboard_humidity")}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Wind size={12} className="text-blue-400" />12 km/h Wind
+                  <Wind size={12} className="text-blue-400" />{t("dashboard_wind")}
                 </div>
               </div>
             </CardContent>
@@ -150,17 +157,17 @@ export default function Home() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Zap size={16} className="text-primary" fill="currentColor" />
-                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">Eco Credits</span>
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">{t("dashboard_credits_title")}</span>
                 </div>
                 <ShieldCheck size={14} className="text-primary" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-foreground">1,240</p>
-                <p className="text-xs text-muted-foreground mt-0.5">≈ ₹1,240.00 value</p>
+                <p className="text-3xl font-bold text-foreground">{user.ecoCredits.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard_credits_value")}</p>
               </div>
               <Link href="/shop">
-                <button className="w-full mt-4 bg-primary text-primary-foreground py-2.5 rounded-xl text-xs font-bold tracking-wide hover:opacity-90 transition-all active:scale-95">
-                  Redeem Credits →
+                <button onClick={() => addToast("Opening marketplace — your credits are ready to redeem!", "success")} className="w-full mt-4 bg-primary text-primary-foreground py-2.5 rounded-xl text-xs font-bold tracking-wide hover:opacity-90 transition-all active:scale-95 focus-ring">
+                  {t("dashboard_credits_btn")} →
                 </button>
               </Link>
             </CardContent>
@@ -173,13 +180,13 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BrainCircuit size={18} className="text-primary" />
-            <h2 className="text-lg font-bold text-foreground">AI Insights</h2>
-            <Badge className="bg-primary/10 text-primary border-none text-[10px] px-2 py-0.5 rounded-full font-semibold">Live</Badge>
+            <h2 className="text-lg font-bold text-foreground">{t("dashboard_ai_insights")}</h2>
+            <Badge className="bg-primary/10 text-primary border-none text-[10px] px-2 py-0.5 rounded-full font-semibold">{t("dashboard_ai_live")}</Badge>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {aiInsights.map((insight, i) => (
-            <div key={i} className="p-5 bg-card border border-border rounded-3xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group">
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4" variants={staggerContainer} initial="hidden" animate="visible">
+          {getAiInsights(t).map((insight, i) => (
+            <motion.div key={i} variants={staggerItem} className="p-5 bg-card border border-border rounded-3xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group">
               <div className="flex items-start justify-between mb-3">
                 <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center", insight.bg)}>
                   <insight.icon size={18} className={insight.color} />
@@ -190,9 +197,9 @@ export default function Home() {
               </div>
               <h3 className="text-sm font-bold text-foreground mb-1">{insight.title}</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">{insight.desc}</p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* Transparency Widget */}
@@ -201,17 +208,17 @@ export default function Home() {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <ShieldCheck size={18} className="text-primary" />
-              <h2 className="text-lg font-bold text-foreground">Area Transparency</h2>
+              <h2 className="text-lg font-bold text-foreground">{t("dashboard_activity_title")}</h2>
             </div>
             <Link href="/map" className="text-xs text-primary font-semibold flex items-center gap-1 hover:gap-2 transition-all">
-              View Map <ChevronRight size={14} />
+              {t("dashboard_activity_view_map")} <ChevronRight size={14} />
             </Link>
           </div>
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: "Nearby Complaints", value: "3", sub: "2 active · 1 resolved", color: "text-amber-500", bg: "bg-amber-500/10" },
-              { label: "Active Smart Bins", value: "12", sub: "9 operational", color: "text-blue-500", bg: "bg-blue-500/10" },
-              { label: "Waste Collected", value: "2.4T", sub: "This week nearby", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+              { label: t("dashboard_activity_complaints"), value: "3", sub: t("dashboard_activity_complaints_sub"), color: "text-amber-500", bg: "bg-amber-500/10" },
+              { label: t("dashboard_activity_bins"), value: "12", sub: t("dashboard_activity_bins_sub"), color: "text-blue-500", bg: "bg-blue-500/10" },
+              { label: t("dashboard_activity_waste"), value: "2.4T", sub: t("dashboard_activity_waste_sub"), color: "text-emerald-500", bg: "bg-emerald-500/10" },
             ].map((item) => (
               <div key={item.label} className={cn("p-4 rounded-2xl", item.bg)}>
                 <p className={cn("text-2xl font-bold", item.color)}>{item.value}</p>
@@ -228,10 +235,10 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Recycle size={18} className="text-primary" />
-            <h2 className="text-lg font-bold text-foreground">Nearby Smart Bins</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("dashboard_facilities_title")}</h2>
           </div>
           <Link href="/map" className="text-xs text-primary font-semibold flex items-center gap-1 hover:gap-2 transition-all">
-            Open Map <ChevronRight size={14} />
+            {t("dashboard_facilities_open_map")} <ChevronRight size={14} />
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -271,10 +278,10 @@ export default function Home() {
       <div className="space-y-4 pb-6">
         <div className="flex items-center gap-2">
           <Leaf size={18} className="text-primary" />
-          <h2 className="text-lg font-bold text-foreground">Area Activity Feed</h2>
+          <h2 className="text-lg font-bold text-foreground">{t("dashboard_activity_feed_title")}</h2>
         </div>
         <div className="space-y-3">
-          {recentActivity.map((act) => (
+          {getRecentActivity(t).map((act) => (
             <div key={act.id} className="p-4 bg-card border border-border rounded-2xl flex items-center gap-4 hover:border-primary/30 hover:bg-card/80 transition-all">
               <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0",
                 act.status === "success" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"

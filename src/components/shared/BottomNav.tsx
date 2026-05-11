@@ -2,16 +2,9 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, MapPin, QrCode, ShoppingBag, User } from "lucide-react"
+import { Home, MapPin, QrCode, ShoppingBag, User, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const navItems = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "Map", href: "/map", icon: MapPin },
-  { name: "Scan", href: null, icon: QrCode, isScan: true }, // center scan button
-  { name: "Market", href: "/shop", icon: ShoppingBag },
-  { name: "Profile", href: "/profile", icon: User },
-]
+import { useLanguage } from "./LanguageProvider"
 
 interface BottomNavProps {
   onScanClick: () => void
@@ -19,6 +12,16 @@ interface BottomNavProps {
 
 export function BottomNav({ onScanClick }: BottomNavProps) {
   const pathname = usePathname()
+  const { t } = useLanguage()
+
+  const navItems = [
+    { name: "Home", label: t("nav_home"), href: "/", icon: Home },
+    { name: "Map", label: t("nav_map"), href: "/map", icon: MapPin },
+    { name: "Incident Log", label: t("nav_complaints"), href: "/complaints", icon: AlertCircle },
+    { name: "Scan", label: t("nav_scan"), href: null, icon: QrCode, isScan: true },
+    { name: "Market", label: t("nav_shop"), href: "/shop", icon: ShoppingBag },
+    { name: "Profile", label: t("nav_profile"), href: "/profile", icon: User },
+  ]
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
@@ -38,7 +41,7 @@ export function BottomNav({ onScanClick }: BottomNavProps) {
                 <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 hover:opacity-90 active:scale-95 transition-all">
                   <item.icon size={26} className="text-primary-foreground" strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-semibold text-primary">Scan</span>
+                <span className="text-[10px] font-semibold text-primary">{t("nav_scan")}</span>
               </button>
             )
           }
@@ -53,7 +56,7 @@ export function BottomNav({ onScanClick }: BottomNavProps) {
               )}
             >
               <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
-              <span className={cn("text-[10px] font-semibold", isActive ? "font-bold" : "")}>{item.name}</span>
+              <span className={cn("text-[10px] font-semibold", isActive ? "font-bold" : "")}>{item.label}</span>
             </Link>
           )
         })}

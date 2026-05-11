@@ -9,9 +9,9 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useState as useStateFn } from "react"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/components/shared/LanguageProvider"
+import Image from "next/image"
 
 const rawMaterials = [
   { id: 1, name: "PET Plastic Bottles (Baled)", type: "Plastic Waste", weight: "5.2 tons", price: "₹1,200/ton", seller: "Eco-Collect Delhi", quality: "Grade A", verified: true, demand: "High", image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=400" },
@@ -50,8 +50,8 @@ export default function Shop() {
               <Recycle size={18} className="text-primary" />
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">Circular Economy</span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Eco Marketplace</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Waste → Processing → Circular Wealth</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("shop_title")}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("shop_subtitle")}</p>
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Eco Credits</p>
@@ -91,8 +91,9 @@ export default function Shop() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search materials, products..."
-          className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-2xl text-sm text-foreground outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground/60 shadow-sm"
+          placeholder={t("shop_search")}
+          aria-label="Search marketplace"
+          className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-2xl text-sm text-foreground focus-ring focus:border-primary/50 transition-all placeholder:text-muted-foreground/60 shadow-sm"
         />
       </div>
 
@@ -102,13 +103,13 @@ export default function Shop() {
           className={cn("flex-1 py-2 rounded-xl text-xs font-bold transition-all",
             activeTab === "processed" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           )}>
-          🌱 Processed Products
+          🌱 {t("shop_tab_processed")}
         </button>
         <button onClick={() => setActiveTab("raw")}
           className={cn("flex-1 py-2 rounded-xl text-xs font-bold transition-all",
             activeTab === "raw" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           )}>
-          ♻️ Raw Materials
+          ♻️ {t("shop_tab_raw")}
         </button>
       </div>
 
@@ -127,7 +128,7 @@ export default function Shop() {
           <div key={product.id} className="bg-card border border-border rounded-3xl overflow-hidden hover:shadow-md hover:border-primary/30 transition-all group">
             {/* Image */}
             <div className="aspect-[16/7] overflow-hidden relative">
-              <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 50vw" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-3 left-3 flex items-center gap-2">
                 {product.verified && (

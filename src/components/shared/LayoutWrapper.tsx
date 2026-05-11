@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
+import { AnimatePresence } from "framer-motion"
 import { BottomNav } from "./BottomNav"
 import { Sidebar } from "./Sidebar"
 import { ScanModal } from "./ScanModal"
 import { Footer } from "./Footer"
+import { PageTransition } from "./PageTransition"
 
 const AUTH_ROUTES = ["/splash", "/onboarding", "/login", "/verify-otp", "/setup-profile", "/permissions"]
 
@@ -32,7 +34,11 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   if (isAuthRoute) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        {children}
+        <AnimatePresence mode="wait">
+          <PageTransition key={pathname}>
+            {children}
+          </PageTransition>
+        </AnimatePresence>
       </div>
     )
   }
@@ -41,9 +47,13 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar />
       <main className="flex-1 w-full overflow-x-hidden flex flex-col">
-        {/* Page content */}
+        {/* Page content with transition */}
         <div className="flex-1 w-full max-w-4xl mx-auto">
-          {children}
+          <AnimatePresence mode="wait">
+            <PageTransition key={pathname}>
+              {children}
+            </PageTransition>
+          </AnimatePresence>
         </div>
         {/* Premium footer — visible on all main pages */}
         <Footer />

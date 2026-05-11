@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Leaf, ArrowRight, ShieldCheck, Phone, Info } from "lucide-react"
+import { Leaf, ArrowRight, ShieldCheck, Phone } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export default function LoginScreen() {
@@ -37,8 +37,8 @@ export default function LoginScreen() {
             <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-2xl -z-10 scale-125 animate-pulse"></div>
           </div>
           <div className="space-y-1">
-             <h1 className="text-4xl font-black text-foreground tracking-tighter uppercase">Access Terminal</h1>
-             <p className="text-[10px] text-primary font-black uppercase tracking-[0.3em] opacity-80">UrjaLoop Network Authentication</p>
+             <h1 className="text-4xl font-bold text-foreground tracking-tighter uppercase">Access Terminal</h1>
+             <p className="text-[11px] text-primary font-bold uppercase tracking-[0.2em] opacity-80">UrjaLoop Network Authentication</p>
           </div>
         </div>
 
@@ -50,13 +50,13 @@ export default function LoginScreen() {
             {/* Phone Entry Node */}
             <div className="space-y-4">
               <div className="flex items-center justify-between px-2">
-                 <label htmlFor="phone" className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+                 <label htmlFor="phone" className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.15em]">
                     Mobile Identifier
                  </label>
                  <Phone size={14} className="text-primary opacity-40" />
               </div>
               <div className="relative flex items-center group/input">
-                <div className="absolute left-6 font-black text-foreground flex items-center gap-3 border-r border-foreground/10 pr-5 h-8">
+                <div className="absolute left-6 font-bold text-foreground flex items-center gap-3 border-r border-foreground/10 pr-5 h-8">
                   <span className="text-base">🇮🇳</span>
                   <span className="text-[13px] text-muted-foreground opacity-60">+91</span>
                 </div>
@@ -67,13 +67,14 @@ export default function LoginScreen() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                   placeholder="X XXXX XXXX"
-                  className="w-full h-20 ultra-glass border border-foreground/10 rounded-2xl pl-24 pr-8 text-xl font-black tracking-widest text-foreground focus:outline-none focus:border-primary/50 transition-all placeholder:opacity-20 bg-foreground/5"
+                  aria-label="Mobile phone number"
+                  className="w-full h-20 ultra-glass border border-foreground/10 rounded-2xl pl-24 pr-8 text-xl font-black tracking-widest text-foreground focus-ring focus:border-primary/50 transition-all placeholder:opacity-20 bg-foreground/5"
                 />
               </div>
             </div>
 
             {/* Protocol Agreement */}
-            <div className="flex items-start gap-4 p-5 rounded-2xl bg-foreground/5 border border-foreground/5 group/terms cursor-pointer" onClick={() => setAgreed(!agreed)}>
+            <div className="flex items-start gap-4 p-5 rounded-2xl bg-foreground/5 border border-foreground/5 group/terms cursor-pointer focus-ring" onClick={() => setAgreed(!agreed)} role="checkbox" aria-checked={agreed} tabIndex={0} onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setAgreed(!agreed) } }}>
               <div className="pt-0.5">
                 <div className={cn(
                   "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300",
@@ -82,7 +83,7 @@ export default function LoginScreen() {
                   {agreed && <ShieldCheck size={16} strokeWidth={3} />}
                 </div>
               </div>
-              <p className="text-[11px] font-black text-muted-foreground leading-relaxed uppercase tracking-widest opacity-60 group-hover/terms:opacity-100 transition-opacity">
+              <p className="text-[11px] font-bold text-muted-foreground leading-relaxed tracking-wide opacity-60 group-hover/terms:opacity-100 transition-opacity">
                 I accept the <span className="text-primary hover:underline">Network Protocols</span> and <span className="text-primary hover:underline">Privacy Matrix</span>.
               </p>
             </div>
@@ -92,14 +93,17 @@ export default function LoginScreen() {
               type="submit"
               disabled={phone.length < 10 || !agreed || isSubmitting}
               className={cn(
-                "w-full h-20 rounded-3xl font-black text-[13px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 relative overflow-hidden group/btn",
+                "w-full h-20 rounded-3xl font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-4 relative overflow-hidden group/btn focus-ring",
                 phone.length >= 10 && agreed
                   ? "btn-premium shadow-primary/30 active:scale-95" 
                   : "bg-foreground/5 text-muted-foreground opacity-40 cursor-not-allowed grayscale"
               )}
             >
               {isSubmitting ? (
-                <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Generating Access...</span>
+                </>
               ) : (
                 <>
                   Generate OTP Access
@@ -115,7 +119,7 @@ export default function LoginScreen() {
            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/5"></div>
            <div className="flex items-center gap-3">
               <ShieldCheck size={18} className="text-emerald-500 shadow-sm shadow-emerald-500/20" strokeWidth={2.5} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Encrypted Network Node 🇮🇳</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.15em]">Encrypted Network Node 🇮🇳</span>
            </div>
            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/5"></div>
         </div>

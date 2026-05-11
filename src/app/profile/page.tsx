@@ -11,8 +11,10 @@ import { ThemeToggle } from "@/components/shared/ThemeToggle"
 import { LanguageToggle } from "@/components/shared/LanguageToggle"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/components/shared/LanguageProvider"
+import { useUser } from "@/components/shared/UserContext"
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 
 const userActivity = [
   { id: 1, action: "Waste Submitted", detail: "Smart Bin — Sector 14 Main Gate · 2.4kg Plastic", time: "2 hours ago", icon: Zap, credit: "+ 24 credits", positive: true },
@@ -28,6 +30,8 @@ const ecoCreditHistory = [
 
 export default function Profile() {
   const { t } = useLanguage()
+  const user = useUser()
+  const [activeTab, setActiveTab] = useState<"activity" | "achievements">("activity")
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
   const toggleSection = (section: string) => {
@@ -42,16 +46,16 @@ export default function Profile() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
         <div className="relative z-10 flex items-center gap-4">
           <div className="relative group">
-            <div className="w-20 h-20 rounded-2xl border-2 border-border overflow-hidden shadow-sm">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="Avatar" className="w-full h-full object-cover" />
+            <div className="w-20 h-20 rounded-2xl border-2 border-border overflow-hidden shadow-sm relative">
+              <Image src={user.avatarUrl} alt="User avatar" fill className="object-cover" />
             </div>
-            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-primary-foreground rounded-xl flex items-center justify-center shadow-sm hover:opacity-90 active:scale-90 transition-all">
+            <button aria-label="Change profile picture" className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-primary-foreground rounded-xl flex items-center justify-center shadow-sm hover:opacity-90 active:scale-90 transition-all focus-ring">
               <Camera size={14} strokeWidth={2.5} />
             </button>
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-0.5">
-              <h1 className="text-xl font-bold text-foreground">Alex Harrison</h1>
+              <h1 className="text-xl font-bold text-foreground">{user.name}</h1>
               <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full">
                 <Star size={10} className="text-primary fill-primary" />
                 <span className="text-[10px] font-bold text-primary">{t("profile_platinum")}</span>
@@ -59,7 +63,7 @@ export default function Profile() {
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
               <MapPin size={12} className="text-primary" />
-              Green Valley · Sector 14 · New Delhi
+              {user.location}
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 rounded-full">
@@ -100,8 +104,8 @@ export default function Profile() {
               <Zap size={16} className="text-amber-500" fill="currentColor" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-bold text-foreground">Eco Credits</p>
-              <p className="text-xs text-muted-foreground">1,240 credits · ≈ ₹1,240</p>
+              <p className="text-sm font-bold text-foreground">{t("profile_credits")}</p>
+              <p className="text-xs text-muted-foreground">{t("profile_credits_val")}</p>
             </div>
           </div>
           <ChevronDown size={16} className={cn("text-muted-foreground transition-transform", expandedSection === "credits" ? "rotate-180" : "")} />
@@ -124,7 +128,7 @@ export default function Profile() {
                 </div>
               ))}
               <div className="pt-2 border-t border-border">
-                <p className="text-[10px] text-muted-foreground">🔒 Credits awarded only after AI + weight sensor verification. Anti-fraud system active.</p>
+                <p className="text-[10px] text-muted-foreground">{t("profile_anti_fraud")}</p>
               </div>
             </div>
           </div>

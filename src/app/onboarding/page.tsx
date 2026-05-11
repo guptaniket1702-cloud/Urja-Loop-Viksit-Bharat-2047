@@ -81,14 +81,14 @@ export default function OnboardingScreen() {
               <Earth size={28} strokeWidth={2.5} />
            </div>
            <div className="flex flex-col">
-              <span className="font-black text-xl tracking-tighter uppercase leading-none">Urja<span className="text-primary">Loop</span></span>
-              <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40">Tactical Node</span>
+              <span className="font-bold text-xl tracking-tighter uppercase leading-none">Urja<span className="text-primary">Loop</span></span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.3em] opacity-40">Tactical Node</span>
            </div>
         </div>
         {!isLastStep && (
           <button 
             onClick={handleSkip}
-            className="text-[10px] font-black text-muted-foreground hover:text-primary transition-all px-6 py-3 uppercase tracking-widest ultra-glass rounded-2xl border border-foreground/10"
+            className="text-[11px] font-bold text-muted-foreground hover:text-primary transition-all px-6 py-3 uppercase tracking-widest ultra-glass rounded-2xl border border-foreground/10"
           >
             {t("auth_skip")}
           </button>
@@ -123,12 +123,12 @@ export default function OnboardingScreen() {
 
           <div className="text-center space-y-6 w-full">
             <div className="space-y-2">
-               <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] opacity-80">Module 0{currentStep + 1}</p>
-               <h2 className="text-4xl lg:text-5xl font-black text-foreground tracking-tighter uppercase leading-none max-w-[10ch] mx-auto">
+               <p className="text-[11px] font-bold text-primary uppercase tracking-[0.3em] opacity-80">Module 0{currentStep + 1}</p>
+               <h2 className="text-4xl lg:text-5xl font-bold text-foreground tracking-tighter uppercase leading-none max-w-[10ch] mx-auto">
                  {StepContent.title}
                </h2>
             </div>
-            <p className="text-sm lg:text-base font-bold text-muted-foreground/60 leading-relaxed max-w-[32ch] mx-auto uppercase tracking-wide">
+            <p className="text-sm lg:text-base font-medium text-muted-foreground/70 leading-relaxed max-w-prose mx-auto">
               {StepContent.description}
             </p>
           </div>
@@ -156,7 +156,7 @@ export default function OnboardingScreen() {
         <button
           onClick={handleNext}
           className={cn(
-            "w-full flex items-center justify-center gap-4 h-20 rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.3em] transition-all active:scale-95 shadow-2xl group relative overflow-hidden",
+            "w-full flex items-center justify-center gap-4 h-20 rounded-[2.5rem] font-bold text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl group relative overflow-hidden focus-ring",
             isLastStep 
               ? "btn-premium shadow-primary/30" 
               : "ultra-glass border border-foreground/10 text-foreground shadow-2xl"
