@@ -20,11 +20,20 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true)
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      const isDemoSession = localStorage.getItem("urjaloop_demo_session") === "true"
-      
-      if (!isAuthRoute && !session && !isDemoSession) {
-        router.push("/login")
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const isDemoSession = localStorage.getItem("urjaloop_demo_session") === "true"
+        
+        if (!isAuthRoute && !session && !isDemoSession) {
+          router.push("/login")
+        }
+      } catch (error) {
+        console.warn("Auth check failed:", error)
+        // In case of error, if it's not an auth route, redirect to login
+        const isDemoSession = localStorage.getItem("urjaloop_demo_session") === "true"
+        if (!isAuthRoute && !isDemoSession) {
+          router.push("/login")
+        }
       }
     }
     checkAuth()

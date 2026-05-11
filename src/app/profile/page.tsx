@@ -154,7 +154,7 @@ export default function Profile() {
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sector Mode</p>
                   <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-2xl">
                      <button onClick={() => setMode("urban")} className={cn("py-2 px-3 rounded-xl text-[11px] font-bold transition-all", mode === "urban" ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}>Urban</button>
-                     <button onClick={() => setMode("rural")} className={cn("py-2 px-3 rounded-xl text-[11px] font-bold transition-all", mode === "rural" ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}>Rural</button>
+                     <button onClick={() => setMode("rural")} className={cn("py-2 px-3 rounded-xl text-[11px] font-bold transition-all", mode !== "urban" ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}>Rural</button>
                   </div>
                </div>
 

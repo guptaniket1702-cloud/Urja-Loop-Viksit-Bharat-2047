@@ -18,7 +18,7 @@ const navItems = [
   { name: "Profile", href: "/profile", icon: User },
 ]
 
-export function BottomNav() {
+export function BottomNav({ onScanClick }: { onScanClick?: () => void }) {
   const { mode } = useMode()
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -110,7 +110,7 @@ export function BottomNav() {
               return (
                 <button
                   key={item.name}
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  onClick={() => onScanClick ? onScanClick() : setIsMenuOpen(!isMenuOpen)}
                   aria-label="Open scanner menu"
                   className="relative -top-6 flex flex-col items-center group outline-none"
                 >

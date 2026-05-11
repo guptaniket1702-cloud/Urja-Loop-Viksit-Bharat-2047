@@ -49,6 +49,8 @@ export default function SetupProfileScreen() {
           return
         }
 
+        if (!user) return
+
         const { error } = await supabase
           .from('profiles')
           .upsert({
