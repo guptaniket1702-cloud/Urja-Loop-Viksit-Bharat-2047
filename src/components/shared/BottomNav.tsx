@@ -2,22 +2,20 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, MapPin, QrCode, ShoppingBag, User } from "lucide-react"
+import { Home, MapPin, History, Trophy, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { name: "Home", href: "/dashboard", icon: Home },
   { name: "Map", href: "/map", icon: MapPin },
-  { name: "Scan", href: null, icon: QrCode, isScan: true }, // center scan button
-  { name: "Market", href: "/shop", icon: ShoppingBag },
+  { name: "Activity", href: "/activity", icon: History },
+  { name: "Rewards", href: "/shop", icon: Trophy },
   { name: "Profile", href: "/profile", icon: User },
 ]
 
-interface BottomNavProps {
-  onScanClick: () => void
-}
+interface BottomNavProps {}
 
-export function BottomNav({ onScanClick }: BottomNavProps) {
+export function BottomNav({}: BottomNavProps) {
   const pathname = usePathname()
 
   return (
@@ -27,21 +25,6 @@ export function BottomNav({ onScanClick }: BottomNavProps) {
       
       <div className="relative flex items-center justify-around px-2 h-[72px]">
         {navItems.map((item) => {
-          if (item.isScan) {
-            return (
-              <button
-                key="scan"
-                onClick={onScanClick}
-                className="relative -mt-6 flex flex-col items-center gap-1"
-              >
-                {/* Central scan button */}
-                <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 hover:opacity-90 active:scale-95 transition-all">
-                  <item.icon size={26} className="text-primary-foreground" strokeWidth={2} />
-                </div>
-                <span className="text-[10px] font-semibold text-primary">Scan</span>
-              </button>
-            )
-          }
           const isActive = item.href && pathname === item.href
           return (
             <Link

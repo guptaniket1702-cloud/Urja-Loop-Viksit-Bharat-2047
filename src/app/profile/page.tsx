@@ -2,267 +2,237 @@
 
 import { 
   Settings, ChevronRight, LogOut, Camera, Bell, ShieldCheck,
-  MapPin, Moon, AlertTriangle, CheckCircle2, Clock, History,
-  Recycle, Leaf, Trophy, Zap, Star, Shield, QrCode, Info,
-  HelpCircle, Globe, Lock, ChevronDown, Edit2
+  MapPin, Moon, History, Recycle, Leaf, Trophy, QrCode, 
+  Globe, Edit2, CheckCircle2, Wallet
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/shared/ThemeToggle"
-import { ProfileSettingsMenu } from "@/components/shared/ProfileSettingsMenu"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { LanguageToggle } from "@/components/shared/LanguageToggle"
 import { cn } from "@/lib/utils"
-import { useLanguage } from "@/components/shared/LanguageProvider"
 import { useMode } from "@/components/shared/ModeProvider"
-import { RuralProfile } from "@/components/rural/RuralProfile"
 import { useState } from "react"
 import Link from "next/link"
 
-const userActivity = [
-  { id: 1, action: "Waste Submitted", detail: "Smart Bin — Sector 14 Main Gate · 2.4kg Plastic", time: "2 hours ago", icon: Zap, credit: "+ 24 credits", positive: true },
-  { id: 2, action: "Complaint Resolved", detail: "Illegal Dumping — Metro Station", time: "Yesterday", icon: CheckCircle2, credit: "Resolved", positive: true },
-  { id: 3, action: "Marketplace Purchase", detail: "Organic Compost 25kg bag", time: "3 days ago", icon: Recycle, credit: "- 450 credits", positive: false },
-]
-
-const ecoCreditHistory = [
-  { label: "Waste Submission Bonus", amount: "+24", status: "Verified", date: "Today" },
-  { label: "Weekly Streak Bonus", amount: "+50", status: "Verified", date: "Mon" },
-  { label: "Compost Purchase", amount: "-450", status: "Redeemed", date: "3 days ago" },
-]
-
 export default function Profile() {
-  const { t } = useLanguage()
-  const { mode, setMode } = useMode()
-  const [expandedSection, setExpandedSection] = useState<string | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
-  const [name, setName] = useState("Alex Harrison")
-  const [isFarmer, setIsFarmer] = useState(mode === "rural")
+  const { mode } = useMode()
+  const isFarmer = mode === "rural"
 
-  const handleSaveProfile = () => {
-    setIsEditing(false)
-    if (isFarmer) {
-      setMode("rural")
-    } else {
-      setMode("urban")
-    }
-  }
+  const stats = isFarmer ? [
+    { label: "Biomass Contributed", value: "1.2 Tons", icon: Leaf, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { label: "Carbon Saved", value: "240 kg", icon: ShieldCheck, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Rewards Earned", value: "₹4,200", icon: Trophy, color: "text-amber-500", bg: "bg-amber-500/10" },
+  ] : [
+    { label: "Waste Recycled", value: "48 kg", icon: Recycle, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { label: "CO₂ Reduced", value: "124 kg", icon: Leaf, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Credits Earned", value: "1,240", icon: Trophy, color: "text-amber-500", bg: "bg-amber-500/10" },
+  ]
 
-  const toggleSection = (section: string) => {
-    setExpandedSection(expandedSection === section ? null : section)
-  }
+  const impactText = isFarmer 
+    ? "You prevented open waste burning equivalent to 240kg CO₂"
+    : "Your contributions helped recover 1.2 tons of recyclable waste"
 
-  if (mode === "rural") {
-    return <RuralProfile />
-  }
+  const activities = [
+    { title: isFarmer ? "Biomass collection" : "Waste drop completed", desc: isFarmer ? "400kg Rice Straw" : "2.4kg Plastic at Sector 14", time: "2h ago", icon: CheckCircle2 },
+    { title: "Credits earned", desc: "Verified by Smart Bin AI", time: "Yesterday", icon: Trophy },
+  ]
 
   return (
-    <div className="p-4 pb-32 lg:p-8 space-y-6 animate-in fade-in duration-700 min-h-screen">
+    <div className="min-h-screen bg-background text-foreground p-4 pb-32 lg:p-8 space-y-6 animate-in fade-in duration-700">
       
-      {/* Profile Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
-        <ProfileSettingsMenu />
-      </div>
-
-      {/* Profile Card */}
-      <div className="relative bg-card border border-border rounded-3xl p-5 shadow-sm overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-        <div className="relative z-10 flex items-center gap-4">
+      {/* Profile Header Card */}
+      <div className="relative bg-card border border-border rounded-[2.5rem] p-6 shadow-sm overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+        
+        <div className="flex flex-col sm:flex-row items-center gap-6 relative z-10">
           <div className="relative group">
-            <div className="w-20 h-20 rounded-2xl border-2 border-border overflow-hidden shadow-sm">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="Avatar" className="w-full h-full object-cover" />
+            <div className="w-24 h-24 rounded-[2rem] border-2 border-border overflow-hidden shadow-xl">
+              <img 
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${isFarmer ? 'Ram' : 'Alex'}`} 
+                alt="Avatar" 
+                className="w-full h-full object-cover bg-muted" 
+              />
             </div>
-            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-primary-foreground rounded-xl flex items-center justify-center shadow-sm hover:opacity-90 active:scale-90 transition-all">
+            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-primary-foreground rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
               <Camera size={14} strokeWidth={2.5} />
             </button>
           </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 mb-0.5">
-                <h1 className="text-xl font-bold text-foreground">{name}</h1>
-                <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full">
-                  <Star size={10} className="text-primary fill-primary" />
-                  <span className="text-[10px] font-bold text-primary">{t("profile_platinum")}</span>
-                </div>
-              </div>
-              <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                <DialogTrigger render={<button className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground" />}>
-                  <Edit2 size={16} />
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Edit Profile</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <label htmlFor="name" className="text-sm font-medium">Full Name</label>
-                      <input 
-                        id="name" 
-                        value={name} 
-                        onChange={(e) => setName(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <label className="text-sm font-medium">I am a Farmer</label>
-                        <p className="text-[10px] text-muted-foreground">Switch to rural farm management mode.</p>
-                      </div>
-                      <button 
-                        onClick={() => setIsFarmer(!isFarmer)}
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isFarmer ? 'bg-primary' : 'bg-input'}`}
-                      >
-                        <span className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${isFarmer ? 'translate-x-5' : 'translate-x-0'}`} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-3 mt-4">
-                    <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-muted transition-colors">Cancel</button>
-                    <button onClick={handleSaveProfile} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-95">Save Changes</button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-              <MapPin size={12} className="text-primary" />
-              Green Valley · Sector 14 · New Delhi
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 rounded-full">
+
+          <div className="flex-1 text-center sm:text-left space-y-1">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
+              <h1 className="text-2xl font-bold tracking-tight">{isFarmer ? "Ram Singh" : "Alex Harrison"}</h1>
+              <div className="px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-1">
                 <ShieldCheck size={10} className="text-emerald-500" />
-                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Verified Citizen</span>
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                  {isFarmer ? "Verified Farmer" : "Verified User"}
+                </span>
               </div>
-              <Link href="/profile/qr" className="flex items-center gap-1 px-2 py-1 bg-muted border border-border rounded-full hover:border-primary/40 transition-all">
-                <QrCode size={10} className="text-muted-foreground" />
-                <span className="text-[10px] font-semibold text-muted-foreground">My QR</span>
+            </div>
+            
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5 font-medium">
+                <MapPin size={12} className="text-primary" />
+                {isFarmer ? "Ludhiana, Punjab" : "Sector 14, New Delhi"}
+              </div>
+              <div className="flex items-center gap-1.5 font-medium">
+                <History size={12} className="text-primary" />
+                Joined {isFarmer ? "Mar 2024" : "Jan 2024"}
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-center sm:justify-start gap-3">
+              <Link href="/profile/edit" className="p-2 bg-muted/50 hover:bg-border rounded-xl transition-colors text-muted-foreground hover:text-foreground">
+                <Edit2 size={16} />
               </Link>
             </div>
           </div>
+
+          <button className="w-full sm:w-28 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-[1.5rem] flex flex-col items-center justify-center gap-2 hover:bg-emerald-500/10 transition-all group active:scale-95">
+            <QrCode size={32} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Smart QR</span>
+          </button>
         </div>
       </div>
 
-      {/* Impact Stats */}
+      {/* Impact Stats Section */}
       <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: t("profile_total_waste"), value: "248kg", icon: Recycle, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-          { label: t("profile_carbon"), value: "84kg", icon: Leaf, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: t("profile_credits"), value: "1,240", icon: Trophy, color: "text-amber-500", bg: "bg-amber-500/10" },
-        ].map((stat) => (
-          <div key={stat.label} className="p-4 bg-card border border-border rounded-2xl shadow-sm">
-            <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center mb-2", stat.bg)}>
-              <stat.icon size={16} className={stat.color} />
+        {stats.map((stat) => (
+          <div key={stat.label} className="bg-card border border-border rounded-3xl p-4 flex flex-col items-center text-center space-y-2 group hover:border-emerald-500/30 transition-colors">
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform", stat.bg)}>
+              <stat.icon size={20} className={stat.color} />
             </div>
-            <p className="text-lg font-bold text-foreground">{stat.value}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{stat.label}</p>
+            <div className="space-y-0.5">
+              <p className="text-lg font-bold text-foreground">{stat.value}</p>
+              <p className="text-[10px] text-muted-foreground font-bold leading-tight uppercase tracking-wide">{stat.label}</p>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Eco Credits Detail */}
-      <div className="bg-card border border-border rounded-3xl shadow-sm overflow-hidden">
-        <button onClick={() => toggleSection("credits")} className="w-full p-5 flex items-center justify-between hover:bg-muted/40 transition-all">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center">
-              <Zap size={16} className="text-amber-500" fill="currentColor" />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-bold text-foreground">Eco Credits</p>
-              <p className="text-xs text-muted-foreground">1,240 credits · ≈ ₹1,240</p>
-            </div>
+      {/* Environmental Impact Banner */}
+      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-[2rem] p-4 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:scale-125 transition-transform">
+          <Leaf size={48} className="text-emerald-500" />
+        </div>
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
+            <CheckCircle2 size={20} />
           </div>
-          <ChevronDown size={16} className={cn("text-muted-foreground transition-transform", expandedSection === "credits" ? "rotate-180" : "")} />
-        </button>
-        {expandedSection === "credits" && (
-          <div className="border-t border-border px-5 pb-5">
-            <div className="pt-3 space-y-3">
-              {ecoCreditHistory.map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-foreground">{item.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{item.date}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={cn("text-sm font-bold", item.amount.startsWith("+") ? "text-emerald-600 dark:text-emerald-400" : "text-foreground")}>{item.amount}</p>
-                    <Badge className={cn("text-[9px] border-none rounded-full px-1.5",
-                      item.status === "Verified" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"
-                    )}>{item.status}</Badge>
-                  </div>
-                </div>
-              ))}
-              <div className="pt-2 border-t border-border">
-                <p className="text-[10px] text-muted-foreground">🔒 Credits awarded only after AI + weight sensor verification. Anti-fraud system active.</p>
-              </div>
-            </div>
-          </div>
-        )}
+          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300 leading-tight">
+            {impactText}
+          </p>
+        </div>
       </div>
 
-      {/* Activity Feed */}
-      <div className="bg-card border border-border rounded-3xl shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <History size={16} className="text-primary" />
-            <h2 className="text-sm font-bold text-foreground">{t("profile_activity")}</h2>
-          </div>
+      {/* Recent Activity Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-xs font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-60">
+            <History size={14} className="text-primary" />
+            Recent Activity
+          </h2>
+          <button className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest">View All</button>
         </div>
-        <div className="divide-y divide-border">
-          {userActivity.map((item) => (
-            <div key={item.id} className="p-4 flex items-center gap-3 hover:bg-muted/30 transition-all">
-              <div className={cn("w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0",
-                item.positive ? "bg-emerald-500/10 text-emerald-500" : "bg-muted text-muted-foreground"
-              )}>
-                <item.icon size={16} strokeWidth={2} />
+        <div className="bg-card border border-border rounded-3xl divide-y divide-border overflow-hidden">
+          {activities.map((activity, idx) => (
+            <div key={idx} className="p-4 flex items-center gap-4 hover:bg-muted/30 transition-colors">
+              <div className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center shrink-0">
+                <activity.icon size={18} className="text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-foreground">{item.action}</p>
-                <p className="text-[11px] text-muted-foreground truncate mt-0.5">{item.detail}</p>
+                <h4 className="text-xs font-bold text-foreground">{activity.title}</h4>
+                <p className="text-[10px] text-muted-foreground truncate font-medium">{activity.desc}</p>
               </div>
-              <div className="text-right flex-shrink-0">
-                <p className={cn("text-xs font-bold", item.positive && item.credit.startsWith("+") ? "text-emerald-600 dark:text-emerald-400" : "text-foreground")}>
-                  {item.credit}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{item.time}</p>
-              </div>
+              <span className="text-[10px] font-bold text-muted-foreground shrink-0 uppercase tracking-tighter">{activity.time}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Security & Support Section */}
-      <div className="bg-card border border-border rounded-3xl shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-border">
-          <h2 className="text-sm font-bold text-foreground">Support & Security</h2>
-        </div>
-        
-        {[
-          { label: "Privacy & Data Protection", icon: Shield },
-          { label: "Community Guidelines", icon: Info },
-          { label: "Help Center & FAQs", icon: HelpCircle },
-        ].map((item) => (
-          <button key={item.label} className="w-full p-4 flex items-center gap-3 hover:bg-muted/30 transition-all border-b border-border last:border-0">
-            <div className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center">
-              <item.icon size={16} className="text-muted-foreground" />
-            </div>
-            <p className="text-sm font-medium text-foreground flex-1 text-left">{item.label}</p>
-            <ChevronRight size={16} className="text-muted-foreground" />
-          </button>
-        ))}
-      </div>
-
-      {/* Reset + Logout */}
+      {/* Settings Section */}
       <div className="space-y-3">
-        <button 
-          onClick={() => { localStorage.removeItem("urjaloop_onboarded"); window.location.href = "/splash" }}
-          className="w-full py-3 rounded-2xl border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold hover:bg-amber-500/10 transition-all flex items-center justify-center gap-2"
-        >
-          <History size={14} /> Reset Onboarding (Demo)
-        </button>
-        <button className="w-full py-3 rounded-2xl border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold hover:bg-red-500/10 transition-all flex items-center justify-center gap-2">
-          <LogOut size={14} /> {t("profile_logout")}
-        </button>
+        <h2 className="text-xs font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2 px-1 opacity-60">
+          <Settings size={14} className="text-primary" />
+          Settings
+        </h2>
+        <div className="bg-card border border-border rounded-3xl divide-y divide-border overflow-hidden">
+          {/* Nearby Centers */}
+          <div className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/5 text-primary flex items-center justify-center">
+                <MapPin size={16} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">Nearby Centers</p>
+                <p className="text-[10px] text-muted-foreground font-medium">Manage processing units</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </div>
+
+          {/* Payment Details */}
+          <div className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/5 text-primary flex items-center justify-center">
+                <Wallet size={16} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">Payment / Bank Details</p>
+                <p className="text-[10px] text-muted-foreground font-medium">Manage your earnings</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </div>
+
+          {/* Notifications */}
+          <div className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/5 text-primary flex items-center justify-center">
+                <Bell size={16} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">Notifications</p>
+                <p className="text-[10px] text-muted-foreground font-medium">Smart alerts & updates</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </div>
+
+          {/* Language */}
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-muted/50 text-muted-foreground flex items-center justify-center">
+                <Globe size={16} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">Language</p>
+                <p className="text-[10px] text-muted-foreground font-medium">Regional Support</p>
+              </div>
+            </div>
+            <LanguageToggle />
+          </div>
+
+          {/* Theme */}
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-muted/50 text-muted-foreground flex items-center justify-center">
+                <Moon size={16} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">Appearance</p>
+                <p className="text-[10px] text-muted-foreground font-medium">System theme</p>
+              </div>
+            </div>
+            <ThemeToggle />
+          </div>
+        </div>
       </div>
 
-      <p className="text-[10px] text-muted-foreground text-center pb-4">
-        UrjaLoop v1.0 · Built for Viksit Bharat 2047 · Open Source
+      {/* Logout */}
+      <button className="w-full p-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-600 hover:bg-red-500/10 transition-all flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-[0.2em] active:scale-[0.98]">
+        <LogOut size={16} /> Log Out
+      </button>
+
+      <p className="text-[10px] text-muted-foreground text-center pb-8 opacity-30 uppercase font-black tracking-[0.4em]">
+        UrjaLoop · Viksit Bharat 2047
       </p>
     </div>
   )

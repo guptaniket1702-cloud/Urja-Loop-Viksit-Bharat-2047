@@ -7,7 +7,7 @@ import { Sidebar } from "./Sidebar"
 import { ScanModal } from "./ScanModal"
 import { AccessibilityProvider } from "./AccessibilityProvider"
 
-const AUTH_ROUTES = ["/", "/splash", "/onboarding", "/login", "/verify-otp", "/setup-profile", "/permissions"]
+const AUTH_ROUTES = ["/", "/splash", "/onboarding", "/login", "/verify-otp", "/setup-profile", "/permissions", "/profile/edit"]
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const [isScanModalOpen, setIsScanModalOpen] = useState(false)
@@ -52,12 +52,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
           </div>
         </main>
 
-        <BottomNav onScanClick={() => setIsScanModalOpen(true)} />
-        
-        <ScanModal
-          isOpen={isScanModalOpen}
-          onClose={() => setIsScanModalOpen(false)}
-        />
+        <BottomNav />
       </div>
     </AccessibilityProvider>
   )
