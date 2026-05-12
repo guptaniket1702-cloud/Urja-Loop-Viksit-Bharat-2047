@@ -14,15 +14,16 @@ import { toast } from "sonner"
 import { useLanguage } from "@/components/shared/LanguageProvider"
 
 import { supabase } from "@/lib/supabase"
-import { toast } from "sonner"
 
 const STATUS_STEPS = ["Submitted", "Under Review", "Assigned", "In Progress", "Resolved"]
 
 export default function Complaints() {
   const [activeTab, setActiveTab] = useState<"new" | "history">("history")
-  const [selectedComplaint, setSelectedComplaint] = useState(myComplaints[0])
+  const [complaints, setComplaints] = useState<any[]>([])
+  const [selectedComplaint, setSelectedComplaint] = useState<any>(null)
   const [formStep, setFormStep] = useState(0)
   const [selectedSeverity, setSelectedSeverity] = useState<string>("Medium")
+  const [isLoading, setIsLoading] = useState(false)
 
   const { t } = useLanguage()
 
@@ -131,9 +132,10 @@ export default function Complaints() {
                   )}>
                     {level}
                   </button>
-                </div>
-                <p className="text-[10px] text-muted-foreground px-1">📍 GPS location captured automatically</p>
+                ))}
               </div>
+              <p className="text-[10px] text-muted-foreground px-1">📍 GPS location captured automatically</p>
+            </div>
 
             {/* Description */}
             <div className="space-y-2">

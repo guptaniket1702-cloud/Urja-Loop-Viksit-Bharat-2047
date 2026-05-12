@@ -22,7 +22,6 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
       // eslint-disable-next-line
       setModeState(savedMode)
     }
-    initMode()
   }, [])
 
   const setMode = (newMode: AppMode) => {

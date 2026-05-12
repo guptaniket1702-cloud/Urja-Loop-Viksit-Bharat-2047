@@ -44,9 +44,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 }
 
-export const viewport = {
-  themeColor: "#10b981",
-}
+
 
 export default function RootLayout({
   children,

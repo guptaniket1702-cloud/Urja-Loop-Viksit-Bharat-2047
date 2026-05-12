@@ -199,40 +199,11 @@ export default function OnboardingPage() {
         step.color.split(' ')[0]
       )} />
 
-      {/* Premium Header */}
-      <div className="w-full p-8 lg:p-12 flex justify-between items-center z-20">
-        <div className="flex items-center gap-4 group">
-           <div className="w-12 h-12 ultra-glass border border-foreground/10 rounded-2xl flex items-center justify-center text-primary shadow-2xl group-hover:rotate-12 transition-transform">
-              <Earth size={28} strokeWidth={2.5} />
-           </div>
-           <div className="flex flex-col">
-              <span className="font-bold text-xl tracking-tighter uppercase leading-none">Urja<span className="text-primary">Loop</span></span>
-              <span className="text-[11px] font-bold uppercase tracking-[0.3em] opacity-40">Tactical Node</span>
-           </div>
-        </div>
-        {!isLastStep && (
-          <button 
-            onClick={handleSkip}
-            className="text-[11px] font-bold text-muted-foreground hover:text-primary transition-all px-6 py-3 uppercase tracking-widest ultra-glass rounded-2xl border border-foreground/10"
-          >
-            Skip
-          </button>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8 z-10 w-full max-w-2xl mx-auto">
-        <div 
-          key={currentStep}
-          className="w-full flex flex-col items-center text-center space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700"
-        >
-          {/* Visual Container */}
-          <div className="relative">
-            <div className={cn(
-              "w-48 h-48 md:w-56 md:h-56 rounded-[2.5rem] bg-card border border-border flex items-center justify-center shadow-2xl relative z-10",
-              StepContent.bg
-            )}>
-              <StepContent.icon className={cn("w-24 h-24 md:w-28 md:h-28", StepContent.color)} strokeWidth={1.5} />
+      {/* Header */}
+      <header className="relative z-10 w-full p-6 flex justify-between items-center max-w-6xl mx-auto">
+         <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+               <Leaf size={16} />
             </div>
             <span className="font-bold tracking-tight text-lg">UrjaLoop</span>
          </div>
@@ -269,7 +240,7 @@ export default function OnboardingPage() {
 
       </main>
 
-      {/* FIXED BOTTOM NAVIGATION - Ensures buttons NEVER move */}
+      {/* FIXED BOTTOM NAVIGATION */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-t border-border/50">
          <div className="max-w-6xl mx-auto px-6 h-32 flex items-center justify-between gap-4">
             
@@ -286,21 +257,7 @@ export default function OnboardingPage() {
                )}
             </div>
 
-          <div className="text-center space-y-6 w-full">
-            <div className="space-y-2">
-               <p className="text-[11px] font-bold text-primary uppercase tracking-[0.3em] opacity-80">Module 0{currentStep + 1}</p>
-               <h2 className="text-4xl lg:text-5xl font-bold text-foreground tracking-tighter uppercase leading-none max-w-[10ch] mx-auto">
-                 {StepContent.title}
-               </h2>
-            </div>
-            <p className="text-sm lg:text-base font-medium text-muted-foreground/70 leading-relaxed max-w-prose mx-auto">
-              {StepContent.description}
-            </p>
-          </div>
-        </div>
-      </div>
-
-            {/* Continue Button Slot - FIXED POSITION */}
+            {/* Continue Button Slot */}
             <div className="flex-1 flex justify-end">
                <button 
                  onClick={handleNext}
@@ -314,7 +271,7 @@ export default function OnboardingPage() {
          </div>
       </nav>
 
-      {/* Footer Branding - Hidden on small screens to save space for the nav */}
+      {/* Footer Branding */}
       <footer className="relative z-10 w-full max-w-6xl mx-auto px-6 h-20 hidden lg:flex items-center justify-start border-t border-border/50 mb-32">
          <div className="flex items-center gap-6 opacity-30 grayscale hover:grayscale-0 transition-all">
             <span className="text-[10px] font-black uppercase tracking-[0.3em]">AI Verified</span>
@@ -329,24 +286,8 @@ export default function OnboardingPage() {
           100% { transform: translateY(12px); opacity: 0; }
         }
       `}} />
-
-        {/* Action Button */}
-        <button
-          onClick={handleNext}
-          className={cn(
-            "w-full flex items-center justify-center gap-4 h-20 rounded-[2.5rem] font-bold text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl group relative overflow-hidden focus-ring",
-            isLastStep 
-              ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(31,122,61,0.2)]" 
-              : "bg-muted/50 text-foreground border border-border hover:bg-muted"
-          )}
-        >
-          {isLastStep ? "Complete Setup" : "Next Step"}
-          <div className="group-hover:translate-x-1 transition-transform">
-             {isLastStep ? <Check size={18} strokeWidth={3} /> : <ArrowRight size={18} strokeWidth={3} />}
-          </div>
-        </button>
-      </div>
     </div>
   )
 }
+
 

@@ -14,7 +14,8 @@ import { useMode } from "@/components/shared/ModeProvider"
 import { RuralMap } from "@/components/rural/RuralMap"
 import { supabase } from "@/lib/supabase"
 import { useEffect } from "react"
-import dynamic from "next/dynamic"
+
+const BHARAT_CENTER = [28.6139, 77.2090]
 
 // Dynamic import — Leaflet must NOT run on server
 const LeafletMap = dynamic(
@@ -30,7 +31,7 @@ const LeafletMap = dynamic(
     </div>
   )}
 )
-const locations = [
+const defaultLocations = [
   { id: 1, type: "bin", lat: 28.6180, lng: 77.2020, fill: 18, status: "low", address: "Sector 14 Main Gate", lastCleaned: "2h ago", nextPickup: "Tomorrow, 6 AM", capacity: "120L" },
   { id: 2, type: "bin", lat: 28.6139, lng: 77.2090, fill: 67, status: "medium", address: "City Center Park", lastCleaned: "5h ago", nextPickup: "Today, 4 PM", capacity: "120L" },
   { id: 3, type: "bin", lat: 28.6200, lng: 77.2150, fill: 91, status: "high", address: "Green View Market", lastCleaned: "12h ago", nextPickup: "ASAP", capacity: "120L" },
@@ -62,7 +63,8 @@ type MapLocation = {
 export default function MapPage() {
   const { t } = useLanguage()
   const { mode } = useMode()
-  const [selectedEntity, setSelectedEntity] = useState<MapLocation>(locations[2])
+  const [locations, setLocations] = useState<MapLocation[]>(defaultLocations)
+  const [selectedEntity, setSelectedEntity] = useState<MapLocation>(defaultLocations[2])
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [showTransparency, setShowTransparency] = useState(true)
   const [isSheetExpanded, setIsSheetExpanded] = useState(false)
@@ -95,7 +97,7 @@ export default function MapPage() {
         // Add spread out mock bins
         for(let i=0; i<5; i++) {
           mappedBins.push({
-            id: `m${i}`,
+            id: 1000 + i,
             type: 'bin',
             lat: BHARAT_CENTER[0] + (Math.random() - 0.5) * 0.04,
             lng: BHARAT_CENTER[1] + (Math.random() - 0.5) * 0.04,

@@ -4,7 +4,7 @@ import {
   Settings, ChevronRight, LogOut, Camera, Bell, ShieldCheck,
   MapPin, Moon, AlertTriangle, CheckCircle2, Clock, History,
   Recycle, Leaf, Trophy, Zap, Star, Shield, QrCode, Info,
-  HelpCircle, Globe, Lock, ChevronDown, Edit2
+  HelpCircle, Globe, Lock, ChevronDown, Edit2, Activity
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/shared/ThemeToggle"
@@ -17,6 +17,8 @@ import { useMode } from "@/components/shared/ModeProvider"
 import { RuralProfile } from "@/components/rural/RuralProfile"
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 import Image from "next/image"
 
 const userActivity = [

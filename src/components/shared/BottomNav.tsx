@@ -6,9 +6,11 @@ import { Home, MapPin, QrCode, ShoppingBag, User, AlertCircle } from "lucide-rea
 import { cn } from "@/lib/utils"
 import { useLanguage } from "./LanguageProvider"
 
-interface BottomNavProps {}
+interface BottomNavProps {
+  onScanClick?: () => void
+}
 
-export function BottomNav({}: BottomNavProps) {
+export function BottomNav({ onScanClick }: BottomNavProps) {
   const pathname = usePathname()
   const { t } = useLanguage()
 
@@ -30,12 +32,12 @@ export function BottomNav({}: BottomNavProps) {
         {navItems.map((item) => {
           const isActive = item.href && pathname === item.href
           
-          if (item.isPrimary) {
+          if (item.isScan) {
             return (
-              <Link
+              <button
                 key={item.name}
-                href={item.href!}
                 aria-label="Scan waste or QR code"
+                onClick={onScanClick}
                 className="relative -top-8 flex flex-col items-center group"
               >
                 {/* Outer Glow */}

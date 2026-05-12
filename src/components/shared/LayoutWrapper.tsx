@@ -9,6 +9,7 @@ import { ScanModal } from "./ScanModal"
 import { Footer } from "./Footer"
 import { PageTransition } from "./PageTransition"
 import { AccessibilityProvider } from "./AccessibilityProvider"
+import { supabase } from "@/lib/supabase"
 
 const AUTH_ROUTES = ["/", "/splash", "/onboarding", "/login", "/verify-otp", "/setup-profile", "/permissions"]
 

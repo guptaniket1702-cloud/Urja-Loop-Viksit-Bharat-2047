@@ -23,11 +23,23 @@ const demandColor = {
   "Medium": "bg-blue-500/10 text-blue-600 dark:text-blue-400",
 }
 
+const processedProducts = [
+  { id: 1, name: "Premium Organic Compost", type: "Fertilizer", price: "250 Credits", weight: "25 kg bag", desc: "High-yield organic compost made from certified city bio-waste.", seller: "UrjaLoop Processing", quality: "Grade A+", verified: true, demand: "High", image: "https://images.unsplash.com/photo-1590682680695-43b964a3ae17?auto=format&fit=crop&q=80&w=400" },
+  { id: 2, name: "Recycled Plastic Pellets", type: "Raw Material", price: "400 Credits", weight: "50 kg sack", desc: "Washed and processed PET plastic pellets ready for manufacturing.", seller: "City Recycling Co.", quality: "Industrial Grade", verified: true, demand: "Very High", image: "https://images.unsplash.com/photo-1605600659873-d808a1d8508a?auto=format&fit=crop&q=80&w=400" },
+  { id: 3, name: "Bio-Gas Energy Token", type: "Energy", price: "100 Credits", weight: "1 Token (10 kWh)", desc: "Redeemable energy token generated from municipal solid waste.", seller: "Waste-to-Energy Plant A", quality: "Renewable", verified: true, demand: "High", image: "https://images.unsplash.com/photo-1473649085228-583485e6e4d7?auto=format&fit=crop&q=80&w=400" },
+]
+
+const rawMaterials = [
+  { id: 4, name: "Sorted PET Bottles", type: "Plastic", price: "150 Credits", weight: "100 kg bale", seller: "Sector 14 Collection", quality: "Unwashed", verified: false, demand: "Medium", image: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&q=80&w=400" },
+  { id: 5, name: "Mixed E-Waste", type: "Electronic", price: "800 Credits", weight: "50 kg lot", seller: "Tech Park Bin Hub", quality: "Mixed", verified: true, demand: "Very High", image: "https://images.unsplash.com/photo-1550005973-58721c56b02a?auto=format&fit=crop&q=80&w=400" },
+]
+
 export default function Shop() {
   const { t } = useLanguage()
   const { mode } = useMode()
   const [activeTab, setActiveTab] = useState<"raw" | "processed">("processed")
   const [search, setSearch] = useState("")
+  const [profile, setProfile] = useState<any>({ eco_credits: 500 }) // mock profile for now
 
   if (mode === "rural") {
     return <RuralShop />

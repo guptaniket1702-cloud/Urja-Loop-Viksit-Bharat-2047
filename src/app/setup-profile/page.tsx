@@ -52,12 +52,12 @@ export default function SetupProfileScreen() {
         const { error } = await supabase
           .from('profiles')
           .upsert({
-            id: user.id,
+            id: user!.id,
             full_name: formData.name,
             role: formData.areaType, // Use urban/rural as primary role for mode
             user_type: formData.role.toLowerCase(), // Collector/Admin/Citizen
             location: formData.location,
-            phone: user.phone,
+            phone: user!.phone,
             eco_credits: 500, // Welcome bonus
             waste_processed: 0,
             co2_saved: 0
