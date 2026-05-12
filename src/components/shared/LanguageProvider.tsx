@@ -2,7 +2,32 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react"
 
-type Language = "en" | "hi"
+export const LANGUAGES = [
+  { code: "en", name: "English", native: "English" },
+  { code: "hi", name: "Hindi", native: "हिन्दी" },
+  { code: "bn", name: "Bengali", native: "বাংলা" },
+  { code: "te", name: "Telugu", native: "తెలుగు" },
+  { code: "mr", name: "Marathi", native: "मराठी" },
+  { code: "ta", name: "Tamil", native: "தமிழ்" },
+  { code: "ur", name: "Urdu", native: "اردو" },
+  { code: "gu", name: "Gujarati", native: "ગુજરાતી" },
+  { code: "kn", name: "Kannada", native: "ಕನ್ನಡ" },
+  { code: "or", name: "Odia", native: "ଓଡ଼ିଆ" },
+  { code: "ml", name: "Malayalam", native: "മലയാളം" },
+  { code: "pa", name: "Punjabi", native: "ਪੰਜਾਬੀ" },
+  { code: "as", name: "Assamese", native: "অসমীয়া" },
+  { code: "ma", name: "Maithili", native: "मैथिली" },
+  { code: "sa", name: "Santali", native: "ᱥᱟᱱᱛᱟᱲᱤ" },
+  { code: "ks", name: "Kashmiri", native: "कॉशुर" },
+  { code: "ne", name: "Nepali", native: "नेपाली" },
+  { code: "sd", name: "Sindhi", native: "سنڌي" },
+  { code: "dg", name: "Dogri", native: "डोगरी" },
+  { code: "ko", name: "Konkani", native: "कोंकणी" },
+  { code: "mn", name: "Manipuri", native: "মণিপুরী" },
+  { code: "sk", name: "Sanskrit", native: "संस्कृतम्" }
+] as const
+
+export type LanguageCode = typeof LANGUAGES[number]["code"]
 
 interface Translations {
   [key: string]: {
@@ -239,7 +264,6 @@ const translations: Translations = {
     dashboard_redeem: "क्रेडिट भुनाएं",
     dashboard_nearby_facilities: "आस-पास की सुविधाएं",
     dashboard_open_map: "मैप खोलें",
-    
 
     // Map Page
     map_title: "सामरिक मानचित्र",
@@ -332,33 +356,35 @@ const translations: Translations = {
     common_loading: "नेटवर्क सिंक्रनाइज़ हो रहा है...",
     common_status: "स्थिति",
   }
+  // For other languages, we'll fallback to English for the prototype
 }
 
 interface LanguageContextType {
-  language: Language
-  setLanguage: (lang: Language) => void
+  language: LanguageCode
+  setLanguage: (lang: LanguageCode) => void
   t: (key: string) => string
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("en")
+  const [language, setLanguage] = useState<LanguageCode>("en")
 
   useEffect(() => {
-    const savedLang = localStorage.getItem("urjaloop_language") as Language
-    if (savedLang && (savedLang === "en" || savedLang === "hi")) {
+    const savedLang = localStorage.getItem("urjaloop_language") as LanguageCode
+    if (savedLang && LANGUAGES.some(l => l.code === savedLang)) {
+      // eslint-disable-next-line
       setLanguage(savedLang)
     }
   }, [])
 
-  const handleSetLanguage = (lang: Language) => {
+  const handleSetLanguage = (lang: LanguageCode) => {
     setLanguage(lang)
     localStorage.setItem("urjaloop_language", lang)
   }
 
   const t = (key: string) => {
-    return translations[language][key] || key
+    return (translations[language] && translations[language][key]) || translations["en"][key] || key
   }
 
   return (

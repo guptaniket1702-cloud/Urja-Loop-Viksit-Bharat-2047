@@ -8,8 +8,9 @@ import { Sidebar } from "./Sidebar"
 import { ScanModal } from "./ScanModal"
 import { Footer } from "./Footer"
 import { PageTransition } from "./PageTransition"
+import { AccessibilityProvider } from "./AccessibilityProvider"
 
-const AUTH_ROUTES = ["/splash", "/onboarding", "/login", "/verify-otp", "/setup-profile", "/permissions"]
+const AUTH_ROUTES = ["/", "/splash", "/onboarding", "/login", "/verify-otp", "/setup-profile", "/permissions"]
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const [isScanModalOpen, setIsScanModalOpen] = useState(false)
@@ -20,11 +21,12 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const isAuthRoute = AUTH_ROUTES.includes(pathname)
 
   useEffect(() => {
+    // eslint-disable-next-line
     setMounted(true)
     if (!isAuthRoute) {
       const hasOnboarded = localStorage.getItem("urjaloop_onboarded")
       if (!hasOnboarded) {
-        router.push("/splash")
+        router.push("/login")
       }
     }
   }, [isAuthRoute, pathname, router])
@@ -33,36 +35,38 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   if (isAuthRoute) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <AnimatePresence mode="wait">
-          <PageTransition key={pathname}>
-            {children}
-          </PageTransition>
-        </AnimatePresence>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      <Sidebar />
-      <main className="flex-1 w-full overflow-x-hidden flex flex-col">
-        {/* Page content with transition */}
-        <div className="flex-1 w-full max-w-4xl mx-auto">
+      <AccessibilityProvider>
+        <div className="min-h-screen bg-background text-foreground">
           <AnimatePresence mode="wait">
             <PageTransition key={pathname}>
               {children}
             </PageTransition>
           </AnimatePresence>
         </div>
-        {/* Premium footer — visible on all main pages */}
-        <Footer />
-      </main>
-      <BottomNav onScanClick={() => setIsScanModalOpen(true)} />
-      <ScanModal
-        isOpen={isScanModalOpen}
-        onClose={() => setIsScanModalOpen(false)}
-      />
-    </div>
+      </AccessibilityProvider>
+    )
+  }
+
+  return (
+    <AccessibilityProvider>
+      <div className="flex min-h-screen bg-background text-foreground">
+        <Sidebar />
+        <main id="main-content" className="flex-1 w-full overflow-x-hidden flex flex-col outline-none relative" tabIndex={-1}>
+          <div className="flex-1 w-full max-w-4xl mx-auto">
+            <AnimatePresence mode="wait">
+              <PageTransition key={pathname}>
+                {children}
+              </PageTransition>
+            </AnimatePresence>
+          </div>
+          <Footer />
+        </main>
+        <BottomNav onScanClick={() => setIsScanModalOpen(true)} />
+        <ScanModal
+          isOpen={isScanModalOpen}
+          onClose={() => setIsScanModalOpen(false)}
+        />
+      </div>
+    </AccessibilityProvider>
   )
 }

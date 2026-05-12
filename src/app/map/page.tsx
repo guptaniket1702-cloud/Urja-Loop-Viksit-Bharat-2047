@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
-import { 
+import {
   MapPin, Search, Navigation, AlertCircle,
   Clock, Truck, Recycle, ChevronUp, RefreshCw,
   Layers, Eye, AlertTriangle
@@ -10,6 +10,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/components/shared/LanguageProvider"
+import { useMode } from "@/components/shared/ModeProvider"
+import { RuralMap } from "@/components/rural/RuralMap"
 
 // Dynamic import — Leaflet must NOT run on server
 const LeafletMap = dynamic(
@@ -25,7 +27,6 @@ const LeafletMap = dynamic(
     </div>
   )}
 )
-
 const locations = [
   { id: 1, type: "bin", lat: 28.6180, lng: 77.2020, fill: 18, status: "low", address: "Sector 14 Main Gate", lastCleaned: "2h ago", nextPickup: "Tomorrow, 6 AM", capacity: "120L" },
   { id: 2, type: "bin", lat: 28.6139, lng: 77.2090, fill: 67, status: "medium", address: "City Center Park", lastCleaned: "5h ago", nextPickup: "Today, 4 PM", capacity: "120L" },
@@ -57,14 +58,19 @@ type MapLocation = {
 
 export default function MapPage() {
   const { t } = useLanguage()
+  const { mode } = useMode()
   const [selectedEntity, setSelectedEntity] = useState<MapLocation>(locations[2])
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [showTransparency, setShowTransparency] = useState(true)
   const [isSheetExpanded, setIsSheetExpanded] = useState(false)
 
+  if (mode === "rural") {
+    return <RuralMap />
+  }
+
   return (
     <div className="h-[calc(100vh-0rem)] w-full relative overflow-hidden bg-background">
-      
+
       {/* Real Leaflet Map */}
       <div className="absolute inset-0 z-0">
         <LeafletMap
@@ -165,7 +171,7 @@ export default function MapPage() {
                 <div className="h-3 bg-muted rounded-full overflow-hidden">
                   <div className={cn("h-full rounded-full transition-all",
                     selectedEntity.status === "low" ? "bg-emerald-500" :
-                    selectedEntity.status === "medium" ? "bg-amber-500" : "bg-red-500"
+                      selectedEntity.status === "medium" ? "bg-amber-500" : "bg-red-500"
                   )} style={{ width: `${selectedEntity.fill}%` }} />
                 </div>
               </div>

@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import NextImage from "next/image"
-import { useToast } from "@/components/shared/Toast"
+import { toast } from "sonner"
 import { useLanguage } from "@/components/shared/LanguageProvider"
 
 const STATUS_STEPS = ["Submitted", "Under Review", "Assigned", "In Progress", "Resolved"]
@@ -44,7 +44,7 @@ export default function Complaints() {
   const [selectedComplaint, setSelectedComplaint] = useState(myComplaints[0])
   const [formStep, setFormStep] = useState(0)
   const [selectedSeverity, setSelectedSeverity] = useState<string>("Medium")
-  const { addToast } = useToast()
+
   const { t } = useLanguage()
 
   return (
@@ -176,7 +176,7 @@ export default function Complaints() {
               </p>
             </div>
 
-            <button onClick={() => { addToast("Complaint submitted successfully! You'll receive updates via notification.", "success"); setActiveTab("history") }} className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-sm font-bold tracking-wide hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 focus-ring">
+            <button onClick={() => { toast.success("Complaint submitted successfully! You'll receive updates via notification."); setActiveTab("history") }} className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-sm font-bold tracking-wide hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 focus-ring">
               <Upload size={16} /> {t("complaints_submit")}
             </button>
           </CardContent>

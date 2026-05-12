@@ -1,16 +1,18 @@
 import type { Metadata, Viewport } from "next"
-import { Outfit } from "next/font/google"
+import { Inter_Tight } from "next/font/google"
 import "./globals.css"
 import { LayoutWrapper } from "@/components/shared/LayoutWrapper"
 import { ThemeProvider } from "@/components/shared/ThemeProvider"
 import { LanguageProvider } from "@/components/shared/LanguageProvider"
-import { ToastProvider } from "@/components/shared/Toast"
 import { UserProvider } from "@/components/shared/UserContext"
+import { ModeProvider } from "@/components/shared/ModeProvider"
+import { PwaRegister } from "@/components/shared/PwaRegister"
+import { Toaster } from "@/components/ui/sonner"
 
-const outfit = Outfit({ 
+const interTight = Inter_Tight({ 
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-outfit"
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter-tight"
 })
 
 export const metadata: Metadata = {
@@ -48,20 +50,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} font-sans antialiased bg-mesh min-h-screen relative`}>
+      <body className={`${interTight.variable} font-sans antialiased min-h-screen relative bg-background text-foreground`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
           <LanguageProvider>
             <UserProvider>
-              <ToastProvider>
+              <ModeProvider>
+                <PwaRegister />
+                <Toaster position="top-center" richColors theme="system" />
                 <LayoutWrapper>
                   {children}
                 </LayoutWrapper>
-              </ToastProvider>
+              </ModeProvider>
             </UserProvider>
           </LanguageProvider>
         </ThemeProvider>

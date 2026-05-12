@@ -15,7 +15,7 @@ export function BottomNav({ onScanClick }: BottomNavProps) {
   const { t } = useLanguage()
 
   const navItems = [
-    { name: "Home", label: t("nav_home"), href: "/", icon: Home },
+    { name: "Home", label: t("nav_home"), href: "/dashboard", icon: Home },
     { name: "Map", label: t("nav_map"), href: "/map", icon: MapPin },
     { name: "Incident Log", label: t("nav_complaints"), href: "/complaints", icon: AlertCircle },
     { name: "Scan", label: t("nav_scan"), href: null, icon: QrCode, isScan: true },
@@ -41,7 +41,7 @@ export function BottomNav({ onScanClick }: BottomNavProps) {
                 <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 hover:opacity-90 active:scale-95 transition-all">
                   <item.icon size={26} className="text-primary-foreground" strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-semibold text-primary">{t("nav_scan")}</span>
+                <span className="text-[10px] font-semibold text-primary">{item.label}</span>
               </button>
             )
           }

@@ -1,10 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { 
   Home, MapPin, ShoppingBag, User, BrainCircuit,
-  AlertCircle, Leaf
+  AlertCircle, Leaf, ChevronLeft, ChevronRight
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
@@ -14,13 +15,13 @@ import { ThemeToggle } from "./ThemeToggle"
 import { useLanguage } from "./LanguageProvider"
 
 export function Sidebar() {
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
   const user = useUser()
-
   const { t } = useLanguage()
 
   const navItems = [
-    { name: "Home", label: t("nav_home"), href: "/", icon: Home },
+    { name: "Home", label: t("nav_home"), href: "/dashboard", icon: Home },
     { name: "Live Map", label: t("nav_map"), href: "/map", icon: MapPin },
     { name: "Marketplace", label: t("nav_shop"), href: "/shop", icon: ShoppingBag },
     { name: "Complaints", label: t("nav_complaints"), href: "/complaints", icon: AlertCircle },
@@ -29,61 +30,114 @@ export function Sidebar() {
   ]
 
   return (
-    <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-card border-r border-border z-40">
+    <aside 
+      className={cn(
+        "hidden md:flex flex-col h-screen sticky top-0 z-40 transition-all duration-300 ease-in-out",
+        "bg-background border-r border-border",
+        isCollapsed ? "w-[72px]" : "w-56"
+      )}
+    >
+      {/* Collapse Toggle */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute -right-3 top-20 w-6 h-6 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-all z-50 shadow-md"
+        aria-label={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+      >
+        {isCollapsed ? <ChevronRight size={12} strokeWidth={2.5} /> : <ChevronLeft size={12} strokeWidth={2.5} />}
+      </button>
+
       {/* Logo */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-sm">
-            <Leaf className="text-primary-foreground" size={18} strokeWidth={2.5} />
+      <div className={cn(
+        "flex items-center h-16 border-b border-border transition-all duration-300",
+        isCollapsed ? "px-0 justify-center" : "px-5"
+      )}>
+        <Link href="/" className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
+            <Leaf className="text-primary-foreground" size={16} strokeWidth={2} />
           </div>
-          <div>
-            <span className="text-lg font-bold text-foreground tracking-tight">Urja<span className="text-primary">Loop</span></span>
-            <p className="text-[11px] text-muted-foreground font-medium leading-none">Smart Waste Platform</p>
-          </div>
-        </div>
+          {!isCollapsed && (
+            <div className="animate-in fade-in slide-in-from-left-2 duration-200">
+              <span className="text-sm font-semibold tracking-tight">Urja<span className="text-primary">Loop</span></span>
+              <p className="text-[9px] text-muted-foreground font-medium leading-none mt-0.5">Smart Waste Platform</p>
+            </div>
+          )}
+        </Link>
       </div>
 
-      {/* Nav Links */}
-      <nav className="flex-1 p-4 space-y-1">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-2 pt-1">Navigation</p>
+      {/* Nav */}
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        {!isCollapsed && (
+          <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest px-3 pb-3 pt-1">
+            Navigation
+          </p>
+        )}
         {navItems.map((item) => {
           const isActive = pathname === item.href
           return (
             <Link
               key={item.name}
               href={item.href}
+              title={isCollapsed ? item.name : undefined}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                "flex items-center rounded-xl text-sm font-medium transition-all duration-200 group relative",
+                isCollapsed ? "p-2.5 justify-center" : "px-3 py-2.5 gap-3",
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
-              <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-              <span>{item.label}</span>
-              {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-foreground/70" />}
+              {/* Active indicator */}
+              {isActive && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r-full" />
+              )}
+              <item.icon
+                className="shrink-0"
+                size={17}
+                strokeWidth={isActive ? 2 : 1.75}
+              />
+              {!isCollapsed && (
+                <span className="animate-in fade-in duration-200 text-[13px]">{item.label}</span>
+              )}
             </Link>
           )
         })}
       </nav>
 
       {/* Footer Controls */}
-      <div className="p-4 border-t border-border space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-xs text-muted-foreground font-medium">Language</span>
-          <LanguageToggle />
-        </div>
-        <div className="flex items-center justify-between px-1">
-          <span className="text-xs text-muted-foreground font-medium">Theme</span>
-          <ThemeToggle />
-        </div>
-        <div className="pt-2 border-t border-border">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <Image src={user.avatarUrl} alt="User avatar" width={32} height={32} className="rounded-xl border border-border" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-foreground truncate">{user.name}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{user.location}</p>
+      <div className={cn(
+        "p-3 border-t border-border space-y-2 transition-all duration-300",
+      )}>
+        {!isCollapsed && (
+          <div className="space-y-2 px-1 pb-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground font-medium">Language</span>
+              <LanguageToggle />
             </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground font-medium">Theme</span>
+              <ThemeToggle />
+            </div>
+          </div>
+        )}
+        {/* User */}
+        <div className="pt-2 border-t border-border">
+          <div className={cn(
+            "flex items-center gap-2.5 p-2 rounded-xl hover:bg-muted transition-all cursor-pointer",
+            isCollapsed ? "justify-center" : ""
+          )}>
+            <Image 
+              src={user.avatarUrl} 
+              alt="User avatar" 
+              width={28}
+              height={28}
+              className="rounded-lg border border-border shrink-0" 
+            />
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0 animate-in fade-in duration-200">
+                <p className="text-xs font-semibold truncate">{user.name}</p>
+                <p className="text-[9px] text-muted-foreground truncate">{user.location}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
