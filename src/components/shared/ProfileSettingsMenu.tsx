@@ -1,18 +1,25 @@
 "use client"
 
 import { useState } from "react"
+
 import { 
   Settings, X, Globe, Accessibility, 
   Palette, Eye, Wind, Languages, 
   MousePointer2, ScreenShare, Check,
   Menu, Building2, Wheat, LogOut,
-  ChevronRight, Sparkles, ShieldCheck
+  ChevronRight, Sparkles, ShieldCheck,
+  MapPin, Shield, HelpCircle, Bell,
+  Smartphone, Fingerprint, Activity,
+  Type, Volume2, Search, Trash2,
+  HardDrive, Cpu, Network, Info
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAccessibility } from "./AccessibilityProvider"
 import { useLanguage, LANGUAGES } from "./LanguageProvider"
 import { ModeToggle } from "./ModeToggle"
 import { ThemeToggle } from "./ThemeToggle"
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 export function ProfileSettingsMenu() {
   const [isOpen, setIsOpen] = useState(false)
@@ -27,12 +34,22 @@ export function ProfileSettingsMenu() {
     screenReaderHints, setScreenReaderHints
   } = useAccessibility()
 
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      toast.error(error.message)
+    } else {
+      toast.success("Logged out successfully")
+      window.location.href = "/login"
+    }
+  }
+
   return (
     <div className="relative">
       {/* Hamburger Trigger */}
       <button
         onClick={() => setIsOpen(true)}
-        className="w-12 h-12 ultra-glass rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary transition-all shadow-xl hover:scale-105 active:scale-95"
+        className="w-12 h-12 ultra-glass rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary transition-all shadow-xl hover:scale-105 active:scale-95 border border-border/50"
         aria-label="System Settings"
       >
         <Menu size={24} strokeWidth={2.5} />
@@ -48,8 +65,8 @@ export function ProfileSettingsMenu() {
           />
           
           {/* Menu Panel */}
-          <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-card/95 backdrop-blur-2xl border-l border-border shadow-[0_0_50px_rgba(0,0,0,0.3)] z-[101] overflow-y-auto animate-in slide-in-from-right duration-500 selection:bg-primary/20">
-            <div className="p-8 space-y-10">
+          <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-card/95 backdrop-blur-2xl border-l border-border shadow-[0_0_50px_rgba(0,0,0,0.3)] z-[101] overflow-y-auto animate-in slide-in-from-right duration-500 selection:bg-primary/20 custom-scrollbar">
+            <div className="p-8 space-y-10 pb-20">
               
               {/* Header */}
               <div className="flex items-center justify-between pb-6 border-b border-border/50">
@@ -59,7 +76,7 @@ export function ProfileSettingsMenu() {
                   </div>
                   <div>
                     <h2 className="text-lg font-black uppercase tracking-widest text-foreground">Urja Control</h2>
-                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">System Protocol v1.0</p>
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">System Protocol v1.2.0</p>
                   </div>
                 </div>
                 <button 
@@ -89,8 +106,34 @@ export function ProfileSettingsMenu() {
                  </div>
               </div>
 
-              {/* Language Section - 20+ Languages Grid */}
-              <div className="space-y-4">
+              {/* System Configuration (NEW) */}
+              <div className="space-y-6 pt-6 border-t border-border/50">
+                 <div className="flex items-center gap-2 px-1">
+                    <Cpu size={16} className="text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">System Architecture</span>
+                 </div>
+
+                 <div className="grid grid-cols-1 gap-2">
+                    <SystemAction 
+                      icon={MapPin} 
+                      label="Saved Locations" 
+                      desc="Manage frequent bin clusters" 
+                    />
+                    <SystemAction 
+                      icon={Bell} 
+                      label="Notifications" 
+                      desc="Waste collection & alerts" 
+                    />
+                    <SystemAction 
+                      icon={Network} 
+                      label="Neural Integration" 
+                      desc="External IoT node sync" 
+                    />
+                 </div>
+              </div>
+
+              {/* Language Section - 22 Languages Grid */}
+              <div className="space-y-4 pt-6 border-t border-border/50">
                  <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
                        <Globe size={14} className="text-primary" />
@@ -98,12 +141,14 @@ export function ProfileSettingsMenu() {
                     </div>
                     <span className="text-[9px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-full">22 Active</span>
                  </div>
-                 <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                 <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar p-1">
                     {LANGUAGES.map((lang) => (
                       <button
                         key={lang.code}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        onClick={() => setLanguage(lang.code as any)}
+                        onClick={() => {
+                          setLanguage(lang.code as any)
+                          toast.success(`Language set to ${lang.name}`)
+                        }}
                         className={cn(
                           "flex flex-col items-start p-3 rounded-xl border transition-all text-left group",
                           language === lang.code 
@@ -120,7 +165,7 @@ export function ProfileSettingsMenu() {
                  </div>
               </div>
 
-              {/* Accessibility Section */}
+              {/* Sensory Protocols (Accessibility) - Expanded */}
               <div className="space-y-6 pt-6 border-t border-border/50">
                  <div className="flex items-center gap-2 px-1">
                     <Accessibility size={16} className="text-primary" />
@@ -147,27 +192,57 @@ export function ProfileSettingsMenu() {
                       onClick={() => setMonochrome(!monochrome)} 
                     />
                     <AccessibilityToggle 
-                      icon={Languages} 
+                      icon={Type} 
                       label="Dyslexia Font" 
                       active={dyslexiaFont} 
                       onClick={() => setDyslexiaFont(!dyslexiaFont)} 
                     />
+                    <AccessibilityToggle 
+                      icon={MousePointer2} 
+                      label="Large Cursor" 
+                      active={largeCursor} 
+                      onClick={() => setLargeCursor(!largeCursor)} 
+                    />
+                    <AccessibilityToggle 
+                      icon={Volume2} 
+                      label="Reader Hints" 
+                      active={screenReaderHints} 
+                      onClick={() => setScreenReaderHints(!screenReaderHints)} 
+                    />
                  </div>
               </div>
 
-              {/* System Actions */}
+              {/* Security & Support */}
               <div className="space-y-3 pt-6 border-t border-border/50">
+                 <div className="flex items-center gap-2 px-1 mb-4">
+                    <Shield size={14} className="text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Trust & Security</span>
+                 </div>
+
                  <button className="w-full flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-border/50 group">
                     <div className="flex items-center gap-3">
-                       <ShieldCheck size={18} className="text-emerald-500" />
-                       <span className="text-[11px] font-black uppercase tracking-widest">Privacy Encryption</span>
+                       <Fingerprint size={18} className="text-primary" />
+                       <div>
+                          <span className="block text-[11px] font-black uppercase tracking-widest text-left">Biometric Lock</span>
+                          <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Secured by Neural ID</span>
+                       </div>
+                    </div>
+                    <div className="w-8 h-4 bg-muted border border-border rounded-full relative">
+                       <div className="absolute left-1 top-1 w-2 h-2 bg-muted-foreground rounded-full" />
+                    </div>
+                 </button>
+
+                 <button className="w-full flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-border/50 group">
+                    <div className="flex items-center gap-3">
+                       <HelpCircle size={18} className="text-blue-500" />
+                       <span className="text-[11px] font-black uppercase tracking-widest">Technical Support</span>
                     </div>
                     <ChevronRight size={14} className="text-muted-foreground group-hover:translate-x-1 transition-transform" />
                  </button>
 
                  <button 
-                   onClick={() => window.location.href = "/login"}
-                   className="w-full flex items-center justify-between p-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 transition-all border border-transparent hover:border-red-500/30 group"
+                   onClick={handleLogout}
+                   className="w-full flex items-center justify-between p-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 transition-all border border-transparent hover:border-red-500/30 group mt-6"
                  >
                     <div className="flex items-center gap-3">
                        <LogOut size={18} className="text-red-500" />
@@ -182,7 +257,7 @@ export function ProfileSettingsMenu() {
                  <div className="flex items-center justify-center gap-2 text-primary opacity-40">
                     <Sparkles size={12} />
                     <p className="text-[9px] font-black uppercase tracking-[0.3em]">
-                      Neural Nexus v1.0.4
+                      Neural Waste OS · Viksit Bharat
                     </p>
                  </div>
                  <button 
@@ -194,10 +269,11 @@ export function ProfileSettingsMenu() {
                     setMonochrome(false)
                     setLargeCursor(false)
                     setScreenReaderHints(false)
+                    toast.success("System cache cleared and reset")
                   }}
                   className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary hover:underline transition-all"
                  >
-                   Clear Buffer & Reset
+                   Flush Cache & Reset Hardware
                  </button>
               </div>
 
@@ -207,6 +283,23 @@ export function ProfileSettingsMenu() {
       )}
     </div>
   )
+}
+
+function SystemAction({ icon: Icon, label, desc }: { icon: any, label: string, desc: string }) {
+   return (
+      <button className="w-full flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-border/50 group">
+         <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+               <Icon size={16} />
+            </div>
+            <div className="text-left">
+               <h3 className="text-[11px] font-black uppercase tracking-widest">{label}</h3>
+               <p className="text-[9px] text-muted-foreground font-bold tracking-tight uppercase opacity-70">{desc}</p>
+            </div>
+         </div>
+         <ChevronRight size={14} className="text-muted-foreground group-hover:translate-x-1 transition-transform" />
+      </button>
+   )
 }
 
 function AccessibilityToggle({ 
@@ -226,7 +319,7 @@ function AccessibilityToggle({
       className={cn(
         "w-full flex items-center justify-between p-4 rounded-2xl border transition-all group",
         active 
-          ? "bg-primary/5 border-primary/20 text-foreground" 
+          ? "bg-primary/5 border-primary/20 text-foreground shadow-sm" 
           : "bg-muted/10 border-transparent text-muted-foreground hover:bg-muted/30"
       )}
     >
@@ -243,3 +336,4 @@ function AccessibilityToggle({
     </button>
   )
 }
+

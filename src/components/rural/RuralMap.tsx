@@ -150,8 +150,9 @@ export function RuralMap() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
 
   const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: "AIzaSyAaoPl-hmbJyViPAY02ktYEIkVTDV_HVq4"
+    id: 'urjaloop-google-maps',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries: []
   })
 
   const onLoad = useCallback(function callback(map: google.maps.Map) {

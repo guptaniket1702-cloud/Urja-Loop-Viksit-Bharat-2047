@@ -14,15 +14,18 @@ import { useUser } from "./UserContext"
 import { LanguageToggle } from "./LanguageToggle"
 import { ThemeToggle } from "./ThemeToggle"
 import { useLanguage } from "./LanguageProvider"
-
+import { useMode } from "@/components/shared/ModeProvider"
 import { AccessibilityMenu } from "./AccessibilityMenu"
 
 export function Sidebar() {
+  const { mode } = useMode()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [profile, setProfile] = useState<any>(null)
   const pathname = usePathname()
   const user = useUser()
   const { t } = useLanguage()
+
+  const isFarmer = mode === "rural"
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -94,9 +97,16 @@ export function Sidebar() {
         {navItems.map((item) => {
           const isActive = item.href && pathname === item.href
           
+          const className = cn(
+            "flex items-center rounded-xl text-sm font-medium transition-all duration-200 group relative w-full text-left",
+            isCollapsed ? "p-2.5 justify-center" : "px-3 py-2.5 gap-3",
+            isActive
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )
+
           const innerContent = (
             <>
-              {/* Active indicator */}
               {isActive && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r-full" />
               )}
@@ -109,14 +119,6 @@ export function Sidebar() {
                 <span className="animate-in fade-in duration-200 text-[13px]">{item.label}</span>
               )}
             </>
-          )
-
-          const className = cn(
-            "flex items-center rounded-xl text-sm font-medium transition-all duration-200 group relative w-full text-left",
-            isCollapsed ? "p-2.5 justify-center" : "px-3 py-2.5 gap-3",
-            isActive
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
           )
 
           if (item.onClick) {
@@ -161,26 +163,27 @@ export function Sidebar() {
             </div>
           </div>
         )}
+        
+        <AccessibilityMenu isCollapsed={isCollapsed} />
+
         {/* User */}
         <div className="pt-2 border-t border-border">
-          <div className={cn(
+          <Link href="/profile" className={cn(
             "flex items-center gap-2.5 p-2 rounded-xl hover:bg-muted transition-all cursor-pointer",
             isCollapsed ? "justify-center" : ""
           )}>
-            <Image 
-              src={user.avatarUrl} 
-              alt="User avatar" 
-              width={28}
-              height={28}
-              className="rounded-lg border border-border shrink-0" 
+            <img 
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.full_name || user.name || (isFarmer ? 'Ram' : 'Alex')}`} 
+              alt="Avatar" 
+              className="w-7 h-7 rounded-lg border border-border shrink-0 bg-white" 
             />
             {!isCollapsed && (
-              <div className="flex-1 min-w-0 animate-in fade-in duration-200">
-                <p className="text-xs font-semibold truncate">{user.name}</p>
-                <p className="text-[9px] text-muted-foreground truncate">{user.location}</p>
+              <div className="flex-1 min-w-0 animate-in fade-in duration-200 text-left">
+                <p className="text-xs font-semibold truncate">{profile?.full_name || user.name || (isFarmer ? "Ram Singh" : "Alex Harrison")}</p>
+                <p className="text-[9px] text-muted-foreground truncate">{profile?.location || user.location || (isFarmer ? "Ludhiana · Punjab" : "Sector 14 · New Delhi")}</p>
               </div>
             )}
-          </div>
+          </Link>
         </div>
       </div>
     </aside>

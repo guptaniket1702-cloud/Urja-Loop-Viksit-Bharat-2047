@@ -12,8 +12,7 @@ import { cn } from "@/lib/utils"
 import NextImage from "next/image"
 import { toast } from "sonner"
 import { useLanguage } from "@/components/shared/LanguageProvider"
-
-import { supabase } from "@/lib/supabase"
+import { supabase, getSessionUser } from "@/lib/supabase"
 
 const STATUS_STEPS = ["Submitted", "Under Review", "Assigned", "In Progress", "Resolved"]
 
@@ -24,8 +23,141 @@ export default function Complaints() {
   const [formStep, setFormStep] = useState(0)
   const [selectedSeverity, setSelectedSeverity] = useState<string>("Medium")
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { t } = useLanguage()
+
+  // Form State
+  const [formData, setFormData] = useState({
+    type: "Overflowing Bin",
+    location: "Sector 14 · New Delhi",
+    severity: "Medium",
+    description: ""
+  })
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchComplaints()
+
+    // Real-time Subscription for Complaints
+    const channel = supabase
+      .channel('complaints-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setComplaints(prev => [payload.new, ...prev])
+        } else if (payload.eventType === 'UPDATE') {
+          setComplaints(prev => prev.map(c => c.id === payload.new.id ? payload.new : c))
+          if (selectedComplaint?.id === payload.new.id) {
+            setSelectedComplaint(payload.new)
+          }
+        }
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      setSelectedFile(file)
+      setImagePreview(URL.createObjectURL(file))
+    }
+  }
+
+  const fetchComplaints = async () => {
+    setIsLoading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    let query = supabase
+      .from('complaints')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (session) {
+      query = query.eq('user_id', session.user.id)
+    }
+
+    const { data, error } = await query
+    
+    if (data) {
+      setComplaints(data)
+      if (data.length > 0) setSelectedComplaint(data[0])
+    }
+    setIsLoading(false)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    const user = await getSessionUser()
+    if (!user) {
+      toast.error("Please login or setup a demo profile to submit a report")
+      setIsSubmitting(false)
+      return
+    }
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session && !user.isDemo) {
+        toast.error("Session expired. Please login again.")
+        setIsSubmitting(false)
+        return
+    }
+
+    let uploadedImageUrl = null
+
+    // 1. Upload Image to Supabase Storage
+    if (selectedFile && !user.isDemo) {
+      const fileExt = selectedFile.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const filePath = `complaints/${fileName}`
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('complaints')
+        .upload(filePath, selectedFile)
+
+      if (uploadError) {
+        toast.error("Failed to upload image: " + uploadError.message)
+        setIsSubmitting(false)
+        return
+      }
+
+      // Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('complaints')
+        .getPublicUrl(filePath)
+      
+      uploadedImageUrl = publicUrl
+    }
+
+    const newComplaint = {
+      user_id: user.isDemo ? null : session?.user.id,
+      type: formData.type,
+      location_name: formData.location,
+      severity: selectedSeverity,
+      description: formData.description,
+      status: "Submitted",
+      status_idx: 0,
+      image_url: uploadedImageUrl,
+      ai_validated: true,
+      created_at: new Date().toISOString()
+    }
+
+    const { error } = await supabase.from('complaints').insert([newComplaint])
+
+    if (error) {
+      toast.error(error.message)
+    } else {
+      toast.success("Complaint submitted successfully!")
+      setSelectedFile(null)
+      setImagePreview(null)
+      setActiveTab("history")
+      fetchComplaints()
+    }
+    setIsSubmitting(false)
+  }
 
   return (
     <div className="p-4 pb-32 lg:p-8 space-y-6 animate-in fade-in duration-700 min-h-screen">
@@ -77,89 +209,117 @@ export default function Complaints() {
       {activeTab === "new" ? (
         /* --- FILE NEW COMPLAINT FORM --- */
         <Card className="border border-border bg-card shadow-sm rounded-3xl">
-          <CardContent className="p-6 space-y-5">
-            <h2 className="text-base font-bold text-foreground">{t("complaints_form_title")}</h2>
-            
-            {/* Photo Upload */}
-            <div className="w-full aspect-video border-2 border-dashed border-border rounded-2xl bg-muted/40 flex flex-col items-center justify-center text-muted-foreground hover:border-primary/50 hover:bg-muted/60 transition-all cursor-pointer group">
-              <div className="w-12 h-12 bg-card rounded-2xl border border-border flex items-center justify-center mb-3 group-hover:border-primary/40 transition-all">
-                <Camera size={20} className="text-primary" />
+          <form onSubmit={handleSubmit}>
+            <CardContent className="p-6 space-y-5">
+              <h2 className="text-base font-bold text-foreground">{t("complaints_form_title")}</h2>
+              
+              {/* Photo Upload */}
+              <div 
+                onClick={() => document.getElementById('photo-upload')?.click()}
+                className="w-full aspect-video border-2 border-dashed border-border rounded-2xl bg-muted/40 flex flex-col items-center justify-center text-muted-foreground hover:border-primary/50 hover:bg-muted/60 transition-all cursor-pointer group relative overflow-hidden"
+              >
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <>
+                    <div className="w-12 h-12 bg-card rounded-2xl border border-border flex items-center justify-center mb-3 group-hover:border-primary/40 transition-all">
+                      <Camera size={20} className="text-primary" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground">{t("complaints_photo_title")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("complaints_photo_desc")}</p>
+                  </>
+                )}
+                <input 
+                  id="photo-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleImageSelect}
+                />
               </div>
-              <p className="text-sm font-semibold text-foreground">{t("complaints_photo_title")}</p>
-              <p className="text-xs text-muted-foreground mt-1">{t("complaints_photo_desc")}</p>
-            </div>
 
-            {/* Location */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_location")}</label>
-              <div className="flex gap-2">
-                <div className="flex-1 flex items-center gap-3 p-3 bg-muted/40 border border-border rounded-2xl">
-                  <MapPin size={16} className="text-primary flex-shrink-0" />
-                  <input type="text" defaultValue="Sector 14 · New Delhi"
-                    aria-label="Complaint location"
-                    className="bg-transparent border-none outline-none text-sm text-foreground flex-1 focus-ring" />
+              {/* Location */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_location")}</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 flex items-center gap-3 p-3 bg-muted/40 border border-border rounded-2xl">
+                    <MapPin size={16} className="text-primary flex-shrink-0" />
+                    <input type="text" value={formData.location}
+                      onChange={(e) => setFormData({...formData, location: e.target.value})}
+                      aria-label="Complaint location"
+                      className="bg-transparent border-none outline-none text-sm text-foreground flex-1 focus-ring" />
+                  </div>
                 </div>
-                <p className="text-sm font-semibold text-foreground">Capture or Upload Photo</p>
-                <p className="text-xs text-muted-foreground mt-1">Evidence helps faster resolution</p>
+                <p className="text-[10px] text-muted-foreground px-1">{t("complaints_gps_note")}</p>
               </div>
-              <p className="text-[10px] text-muted-foreground px-1">{t("complaints_gps_note")}</p>
-            </div>
 
-            {/* Issue Type */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_type")}</label>
-              <select className="w-full p-3 bg-muted/40 border border-border rounded-2xl text-sm text-foreground outline-none focus:border-primary/50 transition-all">
-                <option>Overflowing Bin</option>
-                <option>Illegal / Open Dumping</option>
-                <option>Damaged Infrastructure</option>
-                <option>Bio-Hazard / Health Risk</option>
-                <option>Missed Collection</option>
-              </select>
-            </div>
-
-            {/* Severity */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_severity")}</label>
-              <div className="flex gap-2" role="radiogroup" aria-label="Complaint severity">
-                {["Low", "Medium", "High"].map((level) => (
-                  <button key={level} role="radio" aria-checked={selectedSeverity === level} onClick={() => setSelectedSeverity(level)} className={cn("flex-1 py-2 rounded-xl text-xs font-bold border transition-all",
-                    selectedSeverity === level && level === "High" ? "border-red-500 bg-red-500/20 text-red-600 dark:text-red-400 ring-2 ring-red-500/30" :
-                    selectedSeverity === level && level === "Medium" ? "border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-2 ring-amber-500/30" :
-                    selectedSeverity === level && level === "Low" ? "border-emerald-500 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/30" :
-                    level === "High" ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400" :
-                    level === "Medium" ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400" :
-                    "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  )}>
-                    {level}
-                  </button>
-                ))}
+              {/* Issue Type */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_type")}</label>
+                <select 
+                  value={formData.type}
+                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                  className="w-full p-3 bg-muted/40 border border-border rounded-2xl text-sm text-foreground outline-none focus:border-primary/50 transition-all"
+                >
+                  <option>Overflowing Bin</option>
+                  <option>Illegal / Open Dumping</option>
+                  <option>Damaged Infrastructure</option>
+                  <option>Bio-Hazard / Health Risk</option>
+                  <option>Missed Collection</option>
+                </select>
               </div>
-              <p className="text-[10px] text-muted-foreground px-1">📍 GPS location captured automatically</p>
-            </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_desc")}</label>
-              <textarea
-                placeholder={t("complaints_desc_placeholder")}
-                rows={3}
-                aria-label="Complaint description"
-                className="w-full p-3 bg-muted/40 border border-border rounded-2xl text-sm text-foreground focus-ring focus:border-primary/50 transition-all resize-none placeholder:text-muted-foreground/60"
-              />
-            </div>
+              {/* Severity */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_severity")}</label>
+                <div className="flex gap-2" role="radiogroup" aria-label="Complaint severity">
+                  {["Low", "Medium", "High"].map((level) => (
+                    <button key={level} type="button" role="radio" aria-checked={selectedSeverity === level} onClick={() => setSelectedSeverity(level)} className={cn("flex-1 py-2 rounded-xl text-xs font-bold border transition-all",
+                      selectedSeverity === level && level === "High" ? "border-red-500 bg-red-500/20 text-red-600 dark:text-red-400 ring-2 ring-red-500/30" :
+                      selectedSeverity === level && level === "Medium" ? "border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-2 ring-amber-500/30" :
+                      selectedSeverity === level && level === "Low" ? "border-emerald-500 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/30" :
+                      level === "High" ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400" :
+                      level === "Medium" ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400" :
+                      "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    )}>
+                      {level}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            {/* AI Validation Note */}
-            <div className="flex items-start gap-3 p-3 bg-primary/5 border border-primary/20 rounded-2xl">
-              <ShieldCheck size={16} className="text-primary flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">{t("complaints_ai_note_title")}</span> {t("complaints_ai_note_desc")}
-              </p>
-            </div>
+              {/* Description */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("complaints_label_desc")}</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  placeholder={t("complaints_desc_placeholder")}
+                  rows={3}
+                  aria-label="Complaint description"
+                  className="w-full p-3 bg-muted/40 border border-border rounded-2xl text-sm text-foreground focus-ring focus:border-primary/50 transition-all resize-none placeholder:text-muted-foreground/60"
+                />
+              </div>
 
-            <button onClick={() => { toast.success("Complaint submitted successfully! You'll receive updates via notification."); setActiveTab("history") }} className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-sm font-bold tracking-wide hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 focus-ring">
-              <Upload size={16} /> {t("complaints_submit")}
-            </button>
-          </CardContent>
+              {/* AI Validation Note */}
+              <div className="flex items-start gap-3 p-3 bg-primary/5 border border-primary/20 rounded-2xl">
+                <ShieldCheck size={16} className="text-primary flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">{t("complaints_ai_note_title")}</span> {t("complaints_ai_note_desc")}
+                </p>
+              </div>
+
+              <button type="submit" disabled={isSubmitting} className="w-full bg-primary text-primary-foreground py-3 rounded-2xl text-sm font-bold tracking-wide hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 focus-ring">
+                {isSubmitting ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                    <>
+                        <Upload size={16} /> {t("complaints_submit")}
+                    </>
+                )}
+              </button>
+            </CardContent>
+          </form>
         </Card>
       ) : (
         /* --- COMPLAINT HISTORY --- */
@@ -187,8 +347,8 @@ export default function Complaints() {
                 <div className="flex">
                   {/* Image */}
                   <div className="relative w-24 h-full min-h-[120px] flex-shrink-0 rounded-l-3xl overflow-hidden">
-                    {complaint.image ? (
-                      <NextImage src={complaint.image} alt={complaint.type} fill className="object-cover" sizes="96px" />
+                    {complaint.image_url ? (
+                      <NextImage src={complaint.image_url} alt={complaint.type} fill className="object-cover" sizes="96px" />
                     ) : (
                       <div className="w-full h-full bg-muted flex items-center justify-center">
                         <ImageIcon size={20} className="text-muted-foreground/40" />

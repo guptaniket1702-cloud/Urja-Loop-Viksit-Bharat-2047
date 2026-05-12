@@ -17,10 +17,33 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<AppMode>("urban")
 
   useEffect(() => {
-    const savedMode = localStorage.getItem("urjaloop_mode") as AppMode
-    if (savedMode && (savedMode === "urban" || savedMode === "rural")) {
-      // eslint-disable-next-line
-      setModeState(savedMode)
+    const initMode = async () => {
+      const savedMode = localStorage.getItem("urjaloop_mode") as AppMode
+      if (savedMode && (savedMode === "urban" || savedMode === "rural")) {
+        setModeState(savedMode)
+      } else {
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single()
+            
+            if (profile?.role) {
+              setModeState(profile.role as AppMode)
+              localStorage.setItem("urjaloop_mode", profile.role)
+            }
+          }
+        } catch (error) {
+          console.warn("Supabase session check skipped or failed:", error)
+          // Default to urban if no session or error
+          setModeState("urban")
+        }
+      }
+    }
+    initMode()
     }
   }, [])
 

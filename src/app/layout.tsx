@@ -53,7 +53,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${interTight.variable} font-sans antialiased min-h-screen relative bg-background text-foreground`}>
+      <body suppressHydrationWarning className={`${interTight.variable} font-sans antialiased min-h-screen relative bg-background text-foreground`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
