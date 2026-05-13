@@ -6,7 +6,8 @@ import {
   Shield, Activity, Users, Recycle, AlertTriangle, Truck,
   CheckCircle2, Clock, MapPin, ShoppingCart, ScanLine,
   User, ChevronRight, Zap, RefreshCw, LogOut, Bell,
-  TrendingUp, Leaf, Eye, Radio
+  TrendingUp, Leaf, Eye, Radio, Globe, BarChart3,
+  Search, Filter, Maximize2, MoreHorizontal
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
@@ -27,6 +28,7 @@ const iconMap: Record<string, any> = {
   scan: ScanLine, alert: AlertTriangle, bin: Recycle,
   cart: ShoppingCart, user: User, truck: Truck, check: CheckCircle2,
 }
+
 const colorMap: Record<string, string> = {
   emerald: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   red: "bg-red-500/10 text-red-400 border-red-500/20",
@@ -34,12 +36,11 @@ const colorMap: Record<string, string> = {
   blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
 }
+
 const severityColor: Record<string, string> = {
-  High: "bg-red-500/10 text-red-400", Medium: "bg-amber-500/10 text-amber-400", Low: "bg-emerald-500/10 text-emerald-400",
-}
-const statusColor: Record<string, string> = {
-  Submitted: "text-amber-400", "Under Review": "text-blue-400", Assigned: "text-purple-400",
-  "In Progress": "text-sky-400", Resolved: "text-emerald-400",
+  High: "bg-red-500/10 text-red-400 border-red-500/20",
+  Medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  Low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 }
 
 export default function AdminDashboard() {
@@ -51,9 +52,9 @@ export default function AdminDashboard() {
   const [bins, setBins] = useState(DEMO_BINS)
   const [vehicles, setVehicles] = useState(DEMO_VEHICLES)
   const [isLive, setIsLive] = useState(true)
-  const [selectedTab, setSelectedTab] = useState<"feed" | "complaints" | "bins" | "fleet">("feed")
+  const [selectedTab, setSelectedTab] = useState<"feed" | "complaints" | "bins" | "fleet" | "analytics" | "map">("feed")
 
-  // Simulate real-time events
+  // Real-time simulation
   useEffect(() => {
     if (!isLive) return
     const interval = setInterval(() => {
@@ -66,36 +67,34 @@ export default function AdminDashboard() {
       }
       setLiveEvents(prev => [newEvent, ...prev].slice(0, 50))
       setEventCounter(prev => prev + 1)
-
-      // Randomly update KPIs
+      
       setKpis(prev => ({
+        ...prev,
         citizens: prev.citizens + (event.icon === "user" ? 1 : 0),
-        bins: prev.bins,
-        complaints: prev.complaints + (event.icon === "alert" ? 1 : event.icon === "check" ? -1 : 0),
         co2: prev.co2 + Math.floor(Math.random() * 5),
       }))
 
-      // Randomly update bin fills
       setBins(prev => prev.map(b => ({
         ...b,
-        fill: Math.max(0, Math.min(100, b.fill + Math.floor(Math.random() * 7) - 2)),
+        fill: Math.max(0, Math.min(100, b.fill + Math.floor(Math.random() * 5) - 1)),
       })))
-    }, 3000 + Math.random() * 4000)
+    }, 3500)
     return () => clearInterval(interval)
   }, [isLive])
 
-  // Try real Supabase subscriptions
   useEffect(() => {
     const channel = supabase
-      .channel("admin-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "activity_log" }, (payload) => {
-        const d = payload.new as any
-        setLiveEvents(prev => [{
-          id: Date.now(), action: d.action || "Activity", user: "Citizen",
-          location: d.description || "", credits: d.points_earned || 0,
-          icon: "scan", color: "emerald",
-          time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-        }, ...prev].slice(0, 50))
+      .channel("admin-global")
+      .on("postgres_changes", { event: "*", schema: "public", table: "activity_log" }, (payload) => {
+         if (payload.eventType === "INSERT") {
+           const d = payload.new as any
+           setLiveEvents(prev => [{
+             id: Date.now(), action: d.action, user: "Live User",
+             location: d.description || "Sector 14", credits: d.points_earned || 0,
+             icon: "scan", color: "emerald",
+             time: new Date().toLocaleTimeString(),
+           }, ...prev].slice(0, 50))
+         }
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "complaints" }, (payload) => {
         if (payload.eventType === "INSERT") {
@@ -111,223 +110,304 @@ export default function AdminDashboard() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  const EventIcon = ({ type }: { type: string }) => {
-    const Icon = iconMap[type] || Activity
-    return <Icon size={16} />
-  }
-
   return (
-    <div className="min-h-screen bg-[#0a0c10] text-white" style={{ fontFamily: "'Inter Tight',system-ui,sans-serif" }}>
-
-      {/* ===== HEADER ===== */}
-      <header className="sticky top-0 z-50 bg-[#0a0c10]/95 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center">
-              <Shield size={18} className="text-black" />
-            </div>
-            <div>
-              <h1 className="text-sm font-black uppercase tracking-wider">UrjaLoop Admin</h1>
-              <p className="text-[10px] text-white/30 font-medium">Command Center · Viksit Bharat 2047</p>
-            </div>
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-emerald-500/30 overflow-hidden flex">
+      
+      {/* ── COMMAND SIDEBAR ── */}
+      <aside className="w-20 lg:w-64 border-r border-white/5 bg-[#080808]/80 backdrop-blur-3xl flex flex-col items-center lg:items-start py-8 px-4 gap-8 z-50">
+        <div className="flex items-center gap-3 px-2">
+          <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+            <Shield size={22} className="text-black" />
           </div>
-          <div className="flex items-center gap-3">
-            {/* Live indicator */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Live</span>
-              <span className="text-[10px] text-emerald-400/60 font-mono">{eventCounter}</span>
-            </div>
-            <button onClick={() => setIsLive(!isLive)}
-              className={cn("w-9 h-9 rounded-xl flex items-center justify-center border transition-all",
-                isLive ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-white/5 border-white/10 text-white/30"
-              )}>
-              <Radio size={16} />
-            </button>
-            <button onClick={() => router.push("/dashboard")}
-              className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/30 hover:text-white transition-all">
-              <LogOut size={16} />
-            </button>
+          <div className="hidden lg:block">
+            <h1 className="text-sm font-black uppercase tracking-tighter leading-none">UrjaLoop</h1>
+            <p className="text-[9px] text-emerald-500 font-bold uppercase tracking-[0.2em] mt-1">Admin Command</p>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6 pb-24">
-
-        {/* ===== KPI CARDS ===== */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <nav className="flex-1 w-full space-y-2">
           {[
-            { label: "Total Citizens", value: kpis.citizens.toLocaleString(), icon: Users, color: "text-blue-400", bg: "bg-blue-500/10", trend: "+12 today" },
-            { label: "Active Smart Bins", value: kpis.bins.toString(), icon: Recycle, color: "text-emerald-400", bg: "bg-emerald-500/10", trend: `${bins.filter(b => b.fill > 80).length} critical` },
-            { label: "Open Complaints", value: kpis.complaints.toString(), icon: AlertTriangle, color: "text-amber-400", bg: "bg-amber-500/10", trend: "3 urgent" },
-            { label: "CO₂ Prevented", value: `${(kpis.co2 / 1000).toFixed(1)}T`, icon: Leaf, color: "text-emerald-400", bg: "bg-emerald-500/10", trend: "+48kg today" },
-          ].map((kpi) => (
-            <div key={kpi.label} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 hover:border-white/10 transition-all group">
-              <div className="flex items-center justify-between mb-3">
-                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", kpi.bg, kpi.color)}>
-                  <kpi.icon size={20} />
+            { id: "feed", icon: Activity, label: "Live Intel" },
+            { id: "complaints", icon: AlertTriangle, label: "Incidents" },
+            { id: "bins", icon: Recycle, label: "Infra-Health" },
+            { id: "fleet", icon: Truck, label: "Fleet OPS" },
+            { id: "analytics", icon: BarChart3, label: "Advanced Metrics" },
+            { id: "map", icon: Globe, label: "Geospatial" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setSelectedTab(item.id as any)}
+              className={cn(
+                "w-full flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 group relative",
+                selectedTab === item.id ? "bg-emerald-500/10 text-emerald-400" : "text-white/20 hover:text-white/40 hover:bg-white/5"
+              )}
+            >
+              <item.icon size={20} className={cn(selectedTab === item.id ? "scale-110" : "group-hover:scale-110 transition-transform")} />
+              <span className="hidden lg:block text-xs font-bold uppercase tracking-widest">{item.label}</span>
+              {selectedTab === item.id && (
+                <div className="absolute left-[-16px] w-1 h-8 bg-emerald-500 rounded-r-full shadow-[0_0_15px_rgba(16,185,129,0.8)]" />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        <div className="w-full pt-8 border-t border-white/5 space-y-2">
+          <button onClick={() => router.push("/dashboard")} className="w-full flex items-center gap-4 p-3 rounded-2xl text-white/20 hover:text-red-400 hover:bg-red-500/5 transition-all">
+            <LogOut size={20} />
+            <span className="hidden lg:block text-xs font-bold uppercase tracking-widest">Exit Core</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── MAIN INTELLIGENCE CENTER ── */}
+      <main className="flex-1 h-screen overflow-y-auto relative flex flex-col">
+        
+        {/* Top Header Bar */}
+        <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 sticky top-0 bg-[#050505]/80 backdrop-blur-xl z-40">
+          <div className="flex items-center gap-6">
+             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-2xl focus-within:border-emerald-500/50 transition-all">
+                <Search size={14} className="text-white/20" />
+                <input type="text" placeholder="Search Neural Nodes..." className="bg-transparent border-none outline-none text-xs text-white/60 w-48 placeholder:text-white/10 font-medium" />
+             </div>
+             <div className="flex items-center gap-4 border-l border-white/5 pl-6">
+                <div className="flex flex-col">
+                   <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">System Status</span>
+                   <div className="flex items-center gap-2 mt-0.5">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">All Systems Operational</span>
+                   </div>
                 </div>
-                <TrendingUp size={14} className="text-emerald-500/40 group-hover:text-emerald-400 transition-colors" />
+             </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                <Radio size={12} className="text-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Live Stream Active</span>
+             </div>
+             <button className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all relative">
+                <Bell size={18} />
+                <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
+             </button>
+          </div>
+        </header>
+
+        {/* Content Content Area */}
+        <div className="p-8 space-y-8 max-w-[1600px]">
+          
+          {/* KPI Matrix */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "Active Citizens", value: kpis.citizens.toLocaleString(), delta: "+2.4%", icon: Users, color: "blue" },
+              { label: "Waste Node Health", value: `${Math.floor(100 - (bins.filter(b => b.fill > 80).length / bins.length * 100))}%`, delta: "-0.8%", icon: Recycle, color: "emerald" },
+              { label: "Critical Alerts", value: kpis.complaints.toString(), delta: "+3", icon: AlertTriangle, color: "amber" },
+              { label: "Eco-Emission Delta", value: `${(kpis.co2 / 1000).toFixed(1)}T`, delta: "+12.1%", icon: Leaf, color: "purple" },
+            ].map((kpi, i) => (
+              <div key={i} className="bg-[#0c0c0c] border border-white/5 rounded-3xl p-6 relative overflow-hidden group hover:border-white/10 transition-all">
+                <div className={`absolute top-0 right-0 w-24 h-24 bg-${kpi.color}-500/5 blur-3xl group-hover:bg-${kpi.color}-500/10 transition-all`} />
+                <div className="flex justify-between items-start relative z-10">
+                  <div className={cn("p-3 rounded-2xl", `bg-${kpi.color}-500/10 text-${kpi.color}-400`)}>
+                    <kpi.icon size={22} />
+                  </div>
+                  <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/5 px-2 py-1 rounded-lg">{kpi.delta}</span>
+                </div>
+                <div className="mt-6">
+                  <p className="text-3xl font-black tracking-tighter">{kpi.value}</p>
+                  <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">{kpi.label}</p>
+                </div>
               </div>
-              <p className="text-2xl font-black tracking-tight">{kpi.value}</p>
-              <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">{kpi.label}</p>
-              <p className="text-[10px] text-emerald-400/60 mt-1">{kpi.trend}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* ===== TAB SWITCHER ===== */}
-        <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
-          {[
-            { id: "feed" as const, label: "Live Feed", icon: Activity },
-            { id: "complaints" as const, label: "Complaints", icon: AlertTriangle },
-            { id: "bins" as const, label: "Smart Bins", icon: Recycle },
-            { id: "fleet" as const, label: "Fleet", icon: Truck },
-          ].map((tab) => (
-            <button key={tab.id} onClick={() => setSelectedTab(tab.id)}
-              className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
-                selectedTab === tab.id ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" : "text-white/30 hover:text-white/60"
-              )}>
-              <tab.icon size={14} />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* ===== LIVE ACTIVITY FEED ===== */}
-        {selectedTab === "feed" && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Real-Time Activity Stream</p>
-              <p className="text-[10px] text-white/20 font-mono">{liveEvents.length} events</p>
-            </div>
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-              {liveEvents.length === 0 ? (
-                <div className="py-20 text-center">
-                  <Activity size={32} className="text-white/10 mx-auto mb-3" />
-                  <p className="text-sm text-white/20">Waiting for activity...</p>
-                  <p className="text-xs text-white/10 mt-1">Events will appear here in real-time</p>
-                </div>
-              ) : liveEvents.map((event, i) => (
-                <div key={event.id}
-                  className={cn("flex items-center gap-4 p-3.5 rounded-2xl border transition-all",
-                    i === 0 ? "bg-white/[0.05] border-white/10 animate-in slide-in-from-right-5 duration-500" : "bg-white/[0.02] border-white/5"
-                  )}>
-                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0", colorMap[event.color])}>
-                    <EventIcon type={event.icon} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white/90 truncate">{event.action}</p>
-                    <p className="text-[11px] text-white/30 truncate">{event.user} · {event.location}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    {event.credits !== 0 && (
-                      <p className={cn("text-xs font-bold", event.credits > 0 ? "text-emerald-400" : "text-amber-400")}>
-                        {event.credits > 0 ? "+" : ""}{event.credits}
-                      </p>
-                    )}
-                    <p className="text-[10px] text-white/20 font-mono">{event.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
-        )}
 
-        {/* ===== COMPLAINTS TABLE ===== */}
-        {selectedTab === "complaints" && (
-          <div className="space-y-2">
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] px-1">Complaint Management</p>
-            <div className="space-y-2">
-              {complaints.map((c) => (
-                <div key={c.id} className="flex items-center gap-4 p-4 bg-white/[0.03] border border-white/5 rounded-2xl hover:border-white/10 transition-all">
-                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0", severityColor[c.severity])}>
-                    <AlertTriangle size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[10px] text-white/20 font-mono">{c.id}</span>
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", severityColor[c.severity])}>{c.severity}</span>
-                    </div>
-                    <p className="text-sm font-bold text-white/90">{c.type}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <MapPin size={10} className="text-white/20" />
-                      <p className="text-[11px] text-white/30">{c.location}</p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className={cn("text-xs font-bold", statusColor[c.status])}>{c.status}</p>
-                    <p className="text-[10px] text-white/20 mt-0.5">{c.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ===== SMART BINS GRID ===== */}
-        {selectedTab === "bins" && (
-          <div className="space-y-2">
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] px-1">Infrastructure Health</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {bins.map((bin) => {
-                const fillColor = bin.fill > 80 ? "bg-red-500" : bin.fill > 50 ? "bg-amber-500" : "bg-emerald-500"
-                const fillText = bin.fill > 80 ? "text-red-400" : bin.fill > 50 ? "text-amber-400" : "text-emerald-400"
-                const fillBorder = bin.fill > 80 ? "border-red-500/30" : bin.fill > 50 ? "border-amber-500/20" : "border-white/5"
-                return (
-                  <div key={bin.id} className={cn("p-4 bg-white/[0.03] border rounded-2xl transition-all hover:bg-white/[0.05]", fillBorder)}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="text-sm font-bold text-white/90">{bin.name}</p>
-                        <p className="text-[11px] text-white/30">{bin.location}</p>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            
+            {/* Main Content View (Dynamic based on selectedTab) */}
+            <div className="xl:col-span-2 bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] flex flex-col overflow-hidden">
+               
+               {selectedTab === "feed" && (
+                 <>
+                   <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                            <Activity size={16} />
+                         </div>
+                         <h3 className="text-sm font-black uppercase tracking-widest">Global Activity Stream</h3>
                       </div>
-                      <div className={cn("text-xl font-black", fillText)}>{bin.fill}%</div>
-                    </div>
-                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                      <div className={cn("h-full rounded-full transition-all duration-1000", fillColor)} style={{ width: `${bin.fill}%` }} />
-                    </div>
-                    {bin.fill > 80 && (
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <AlertTriangle size={12} className="text-red-400" />
-                        <span className="text-[10px] text-red-400 font-bold">Pickup Required</span>
+                      <div className="flex gap-2">
+                         <button className="p-2 rounded-lg bg-white/5 text-white/30 hover:text-white"><Filter size={14} /></button>
+                         <button className="p-2 rounded-lg bg-white/5 text-white/30 hover:text-white"><Maximize2 size={14} /></button>
                       </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
+                   </div>
+                   
+                   <div className="flex-1 overflow-y-auto max-h-[600px] p-4 space-y-3 custom-scrollbar">
+                      {liveEvents.map((event, i) => {
+                        const Icon = iconMap[event.icon] || Activity
+                        return (
+                          <div key={event.id} className={cn(
+                            "flex items-center gap-4 p-4 rounded-[1.5rem] border transition-all duration-500",
+                            i === 0 ? "bg-emerald-500/5 border-emerald-500/20 scale-[1.01] shadow-[0_0_20px_rgba(16,185,129,0.1)]" : "bg-white/[0.02] border-white/5"
+                          )}>
+                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 border", colorMap[event.color])}>
+                              <Icon size={20} className={i === 0 ? "animate-pulse" : ""} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                               <div className="flex items-center gap-2">
+                                  <p className="text-[13px] font-black text-white/90">{event.action}</p>
+                                  {i === 0 && <span className="text-[8px] bg-emerald-500 text-black px-1.5 py-0.5 rounded-full font-black uppercase">Now</span>}
+                               </div>
+                               <p className="text-[11px] text-white/40 font-medium truncate mt-0.5">{event.user} <span className="mx-1 opacity-30">·</span> {event.location}</p>
+                            </div>
+                            <div className="text-right flex flex-col items-end gap-1">
+                               <span className="text-[10px] font-black font-mono text-white/20 tracking-tighter">{event.time}</span>
+                               {event.credits !== 0 && (
+                                 <div className={cn("text-[10px] font-black px-2 py-0.5 rounded-lg", event.credits > 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400")}>
+                                    {event.credits > 0 ? "+" : ""}{event.credits}C
+                                 </div>
+                               )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                   </div>
+                 </>
+               )}
 
-        {/* ===== FLEET MONITOR ===== */}
-        {selectedTab === "fleet" && (
-          <div className="space-y-2">
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] px-1">Fleet Status</p>
-            <div className="space-y-2">
-              {vehicles.map((v) => (
-                <div key={v.id} className="flex items-center gap-4 p-4 bg-white/[0.03] border border-white/5 rounded-2xl hover:border-white/10 transition-all">
-                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                    v.status === "on_route" ? "bg-blue-500/10 text-blue-400" : "bg-white/5 text-white/30"
-                  )}>
-                    <Truck size={18} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-white/90">{v.plate}</p>
-                    <p className="text-[11px] text-white/30">{v.type} · {v.driver}</p>
-                  </div>
-                  <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                    v.status === "on_route" ? "bg-blue-500/10 text-blue-400" : "bg-white/5 text-white/30"
-                  )}>
-                    {v.status === "on_route" && <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />}
-                    {v.status === "on_route" ? "En Route" : "Idle"}
-                  </div>
-                </div>
-              ))}
+               {selectedTab === "complaints" && (
+                 <div className="p-6 space-y-6">
+                    <h3 className="text-sm font-black uppercase tracking-widest mb-4">Active Incident Log</h3>
+                    <div className="space-y-3">
+                       {complaints.map(c => (
+                         <div key={c.id} className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between hover:border-white/10 transition-all">
+                            <div className="flex items-center gap-4">
+                               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border", severityColor[c.severity])}>
+                                  <AlertTriangle size={18} />
+                               </div>
+                               <div>
+                                  <p className="text-xs font-black text-white/90">{c.type}</p>
+                                  <p className="text-[10px] text-white/30 font-medium">{c.location} · {c.id}</p>
+                               </div>
+                            </div>
+                            <div className="text-right">
+                               <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{c.status}</p>
+                               <p className="text-[9px] text-white/20 font-mono mt-0.5">{c.time}</p>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+               )}
+
+               {selectedTab === "bins" && (
+                 <div className="p-6">
+                    <h3 className="text-sm font-black uppercase tracking-widest mb-6">Neural Node Infrastructure</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       {bins.map(bin => (
+                         <div key={bin.id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl group hover:border-emerald-500/20 transition-all">
+                            <div className="flex justify-between items-start mb-4">
+                               <div>
+                                  <p className="text-xs font-black text-white/90">{bin.name}</p>
+                                  <p className="text-[10px] text-white/30 font-medium">{bin.location}</p>
+                               </div>
+                               <span className={cn("text-lg font-black font-mono", bin.fill > 80 ? "text-red-500" : "text-emerald-500")}>{bin.fill}%</span>
+                            </div>
+                            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                               <div className={cn("h-full rounded-full transition-all duration-1000", bin.fill > 80 ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-emerald-500")} style={{ width: `${bin.fill}%` }} />
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+               )}
+
+               {selectedTab === "fleet" && (
+                 <div className="p-6">
+                    <h3 className="text-sm font-black uppercase tracking-widest mb-6">Fleet Dispatch Monitor</h3>
+                    <div className="space-y-3">
+                       {vehicles.map(v => (
+                         <div key={v.id} className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                               <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40">
+                                  <Truck size={18} />
+                               </div>
+                               <div>
+                                  <p className="text-xs font-black text-white/90">{v.plate}</p>
+                                  <p className="text-[10px] text-white/30 font-medium">{v.type} · {v.driver}</p>
+                               </div>
+                            </div>
+                            <div className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest", v.status === "on_route" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : "bg-white/5 text-white/20")}>
+                               {v.status === "on_route" ? "In Transit" : "Idle"}
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+               )}
+
             </div>
+
+            {/* AI Intelligence / Quick Insights */}
+            <div className="space-y-6">
+               <div className="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-[2.5rem] p-8 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 text-black/10 group-hover:scale-110 transition-transform duration-700">
+                     <Zap size={120} />
+                  </div>
+                  <div className="relative z-10">
+                     <h3 className="text-xl font-black text-black uppercase tracking-tighter mb-2">Neural Priority</h3>
+                     <p className="text-sm text-black/60 font-bold mb-6 max-w-[200px]">3 Smart Bins require immediate fleet dispatch in Sector 14.</p>
+                     <button className="px-6 py-3 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Optimize Routes</button>
+                  </div>
+               </div>
+
+               <div className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-6">
+                  <div className="flex items-center justify-between mb-6">
+                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">Network Load</h3>
+                     <MoreHorizontal size={14} className="text-white/20" />
+                  </div>
+                  <div className="space-y-4">
+                     {[
+                       { label: "Urban Sector A", value: 84, color: "bg-emerald-500" },
+                       { label: "Rural Hub 02", value: 42, color: "bg-blue-500" },
+                       { label: "Market Center", value: 92, color: "bg-red-500" },
+                     ].map((item, i) => (
+                       <div key={i} className="space-y-2">
+                          <div className="flex justify-between items-end">
+                             <p className="text-[10px] font-bold text-white/60">{item.label}</p>
+                             <p className="text-[10px] font-black font-mono">{item.value}%</p>
+                          </div>
+                          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                             <div className={cn("h-full rounded-full transition-all duration-1000", item.color)} style={{ width: `${item.value}%` }} />
+                          </div>
+                       </div>
+                     ))}
+                  </div>
+               </div>
+
+               <div className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-6 flex items-center justify-between group cursor-pointer hover:border-emerald-500/30 transition-all">
+                  <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                        <TrendingUp size={20} />
+                     </div>
+                     <div>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Sustainability</p>
+                        <p className="text-sm font-bold text-white/90">View Impact Report</p>
+                     </div>
+                  </div>
+                  <ChevronRight size={16} className="text-white/20 group-hover:translate-x-1 transition-transform" />
+               </div>
+            </div>
+
           </div>
-        )}
+
+        </div>
 
       </main>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 20px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.1); }
+      `}</style>
     </div>
   )
 }

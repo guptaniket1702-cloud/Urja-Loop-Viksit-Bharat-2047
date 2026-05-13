@@ -72,6 +72,19 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     )
   }
 
+  if (isStandalone) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        {notificationsEnabled && <Toaster position="top-center" richColors theme="system" />}
+        <AnimatePresence mode="wait">
+          <PageTransition key={pathname}>
+            {children}
+          </PageTransition>
+        </AnimatePresence>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
         <Sidebar />
