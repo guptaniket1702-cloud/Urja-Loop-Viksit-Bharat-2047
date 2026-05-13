@@ -39,9 +39,6 @@ export default function Shop() {
   const { mode } = useMode()
   const [activeTab, setActiveTab] = useState<"raw" | "processed">("processed")
   const [search, setSearch] = useState("")
-<<<<<<< Updated upstream
-  const [profile, setProfile] = useState<any>({ eco_credits: 500 }) // mock profile for now
-=======
   const [profile, setProfile] = useState<any>(null)
   const [rawMaterials, setRawMaterials] = useState<any[]>([])
   const [processedProducts, setProcessedProducts] = useState<any[]>([])
@@ -85,7 +82,6 @@ export default function Shop() {
     }
     fetchData()
   }, [])
->>>>>>> Stashed changes
 
   if (mode === "rural") {
     return <RuralShop />
@@ -108,20 +104,12 @@ export default function Shop() {
       return
     }
 
-<<<<<<< Updated upstream
-    // 1. Deduct Credits
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ eco_credits: profile.eco_credits - price })
-      .eq('id', user.id)
-=======
     try {
       // 1. Deduct Credits
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ eco_credits: profile.eco_credits - price })
         .eq('id', session.user.id)
->>>>>>> Stashed changes
 
       if (profileError) throw profileError
 
@@ -145,26 +133,6 @@ export default function Shop() {
     } catch (err) {
       toast.error("Transaction failed")
     }
-<<<<<<< Updated upstream
-
-    // 2. Decrement Stock
-    await supabase
-      .from('marketplace_items')
-      .update({ stock: (item.stock || 10) - 1 })
-      .eq('id', item.id)
-
-    // 3. Log Activity
-    await supabase.from('activity_log').insert({
-      user_id: user.id,
-      action: "Marketplace Purchase",
-      description: `Bought ${item.name} for ${price} credits`,
-      points_earned: -price
-    })
-
-    setProfile({...profile, eco_credits: profile.eco_credits - price})
-    toast.success(`Successfully purchased ${item.name}!`)
-=======
->>>>>>> Stashed changes
   }
 
   return (
