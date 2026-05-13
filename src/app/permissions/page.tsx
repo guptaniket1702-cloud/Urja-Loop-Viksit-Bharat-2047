@@ -36,12 +36,22 @@ export default function PermissionsScreen() {
 
   const handleAllowAll = () => {
     localStorage.setItem("urjaloop_onboarded", "true")
-    router.push("/dashboard")
+    const mode = localStorage.getItem("urjaloop_mode")
+    if (mode === "collector") {
+      router.push("/collector")
+    } else {
+      router.push("/dashboard")
+    }
   }
 
   const handleSkip = () => {
     localStorage.setItem("urjaloop_onboarded", "true")
-    router.push("/dashboard")
+    const mode = localStorage.getItem("urjaloop_mode")
+    if (mode === "collector") {
+      router.push("/collector")
+    } else {
+      router.push("/dashboard")
+    }
   }
 
   return (

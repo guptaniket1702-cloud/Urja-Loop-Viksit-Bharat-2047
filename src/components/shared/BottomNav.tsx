@@ -44,7 +44,8 @@ export function BottomNav({ onScanClick }: { onScanClick?: () => void }) {
       icon: QrCode, 
       href: "/scanner?mode=qr",
       color: "text-blue-400",
-      bg: "bg-blue-400/10"
+      bg: "bg-blue-400/10",
+      show: !isCollector
     },
     { 
       name: "Scan Waste Type", 
@@ -52,17 +53,37 @@ export function BottomNav({ onScanClick }: { onScanClick?: () => void }) {
       icon: Scan, 
       href: "/scanner?mode=waste",
       color: "text-emerald-400",
-      bg: "bg-emerald-400/10"
+      bg: "bg-emerald-400/10",
+      show: !isCollector
+    },
+    { 
+      name: "Vehicle Status", 
+      desc: "Monitor truck health and telemetry", 
+      icon: Truck, 
+      href: "/collector/vehicle",
+      color: "text-cyan-400",
+      bg: "bg-cyan-400/10",
+      show: isCollector
+    },
+    { 
+      name: "Shift Reports", 
+      desc: "Review your performance logs", 
+      icon: FileText, 
+      href: "/collector/reports",
+      color: "text-purple-400",
+      bg: "bg-purple-400/10",
+      show: isCollector
     },
     { 
       name: "File Complaint", 
       desc: "Report illegal dumping nearby", 
       icon: AlertCircle, 
-      href: "/scanner?mode=complaint",
+      href: "/complaints",
       color: "text-red-400",
-      bg: "bg-red-400/10"
+      bg: "bg-red-400/10",
+      show: true
     }
-  ]
+  ].filter(opt => opt.show)
 
   return (
     <>
