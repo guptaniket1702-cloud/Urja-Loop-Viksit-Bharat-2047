@@ -177,7 +177,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ===== TAB SWITCHER ===== */}
-        <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
+        <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/5 rounded-2xl sticky top-20 z-40 backdrop-blur-md">
           {[
             { id: "feed" as const, label: "Live Feed", icon: Activity },
             { id: "complaints" as const, label: "Complaints", icon: AlertTriangle },
@@ -185,10 +185,12 @@ export default function AdminDashboard() {
             { id: "fleet" as const, label: "Fleet", icon: Truck },
           ].map((tab) => (
             <button key={tab.id} onClick={() => setSelectedTab(tab.id)}
-              className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
-                selectedTab === tab.id ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" : "text-white/30 hover:text-white/60"
+              className={cn("flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-300",
+                selectedTab === tab.id 
+                  ? "bg-emerald-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.3)] scale-[1.02]" 
+                  : "text-white/30 hover:text-white/60 hover:bg-white/5"
               )}>
-              <tab.icon size={14} />
+              <tab.icon size={14} className={cn(selectedTab === tab.id ? "animate-pulse" : "")} />
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}

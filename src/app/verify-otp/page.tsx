@@ -268,7 +268,7 @@ export default function VerifyOtpScreen() {
             <ShieldCheck size={14} className="text-primary/40" />
             {t("otp_encrypted")}
           </div>
-        </div>
       </div>
+    </div>
   )
 }
